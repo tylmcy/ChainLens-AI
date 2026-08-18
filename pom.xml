@@ -82,8 +82,10 @@
                 <requireJavaVersion>
                   <version>[21,)</version>
                 </requireJavaVersion>
-                <banDynamicVersions/>
                 <requireReleaseDeps>
+                  <excludes>
+                    <exclude>io.chainlens:*</exclude>
+                  </excludes>
                   <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                 </requireReleaseDeps>
               </rules>
