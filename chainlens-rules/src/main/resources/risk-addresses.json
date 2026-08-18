@@ -1,0 +1,12 @@
+[
+  {
+    "address": "0xdead000000000000000000000000000000000001",
+    "label": "演示-已知钓鱼地址（虚构样例）",
+    "source": "chainlens-builtin-sample"
+  },
+  {
+    "address": "0xdead000000000000000000000000000000000002",
+    "label": "演示-风险交换路由（虚构样例）",
+    "source": "chainlens-builtin-sample"
+  }
+]
