@@ -2,6 +2,8 @@ package io.chainlens.chain;
 
 import java.math.BigInteger;
 
+import io.chainlens.model.Hexes;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
