@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.0</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>io.chainlens</groupId>
+  <artifactId>chainlens-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>ChainLens AI (Parent)</name>
+  <description>Evidence-based Ethereum transaction analysis agent</description>
+  <url>https://github.com/chainlens/chainlens-ai</url>
+
+  <modules>
+    <module>chainlens-model</module>
+    <module>chainlens-chain</module>
+    <module>chainlens-rules</module>
+    <module>chainlens-knowledge</module>
+    <module>chainlens-agent</module>
+    <module>chainlens-api</module>
+    <module>chainlens-mcp</module>
+    <module>chainlens-app</module>
+    <module>chainlens-evaluation</module>
+  </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <spring-ai.version>2.0.0</spring-ai.version>
+    <web3j.version>6.0.0</web3j.version>
+    <!-- 默认排除 smoke 标签（真实 LLM / 联网下载模型）；运行方式：mvn verify -Dsurefire.excludedGroups=none -->
+    <surefire.excludedGroups>smoke</surefire.excludedGroups>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <excludedGroups>${surefire.excludedGroups}</excludedGroups>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-build-requirements</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.9.0,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[21,)</version>
+                </requireJavaVersion>
+                <banDynamicVersions/>
+                <requireReleaseDeps>
+                  <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
+                </requireReleaseDeps>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

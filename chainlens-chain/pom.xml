@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.chainlens</groupId>
+    <artifactId>chainlens-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>chainlens-chain</artifactId>
+  <name>ChainLens Chain</name>
+  <description>只读 Ethereum JSON-RPC 客户端与交易/事件/calldata 解析</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.chainlens</groupId>
+      <artifactId>chainlens-model</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- 仅 ABI 编解码（EventEncoder / FunctionReturnDecoder），不引入 web3j 钱包能力 -->
+    <dependency>
+      <groupId>org.web3j</groupId>
+      <artifactId>abi</artifactId>
+      <version>${web3j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

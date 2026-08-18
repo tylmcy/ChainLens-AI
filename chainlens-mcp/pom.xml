@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.chainlens</groupId>
+    <artifactId>chainlens-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>chainlens-mcp</artifactId>
+  <name>ChainLens MCP</name>
+  <description>MCP Server：以 Streamable HTTP 为主、stdio 为辅，对外暴露链上分析工具（M8 实现）</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.chainlens</groupId>
+      <artifactId>chainlens-agent</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>
