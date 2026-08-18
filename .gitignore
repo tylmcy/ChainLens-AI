@@ -1,0 +1,39 @@
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# ---- macOS ----
+.DS_Store
+
+# ---- Node / web ----
+node_modules/
+web/dist/
+dist/
+.pnpm-store/
+
+# ---- 密钥与本地环境 ----
+.env
+*.pem
+*.key
+
+# ---- 运行时产物 ----
+logs/
+*.log
+eval/results/
+data/
+
+# ---- 测试产物 ----
+.surefire/
+*.hprof
