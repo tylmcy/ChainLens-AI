@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import io.chainlens.chain.Hexes;
+import io.chainlens.model.Hexes;
 import io.chainlens.model.EthLog;
 import io.chainlens.model.EthReceipt;
 

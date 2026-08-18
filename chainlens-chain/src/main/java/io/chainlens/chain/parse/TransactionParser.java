@@ -2,7 +2,7 @@ package io.chainlens.chain.parse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import io.chainlens.chain.Hexes;
+import io.chainlens.model.Hexes;
 import io.chainlens.model.EthTransaction;
 
 /**

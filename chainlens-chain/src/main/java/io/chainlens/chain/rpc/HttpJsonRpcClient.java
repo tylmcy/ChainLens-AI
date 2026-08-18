@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.chainlens.chain.Hexes;
+import io.chainlens.model.Hexes;
 
 /**
  * JSON-RPC 2.0 over HTTPS 实现（Java HttpClient + Jackson）。

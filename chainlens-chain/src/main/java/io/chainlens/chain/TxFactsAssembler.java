@@ -17,6 +17,7 @@ import io.chainlens.model.EthBlock;
 import io.chainlens.model.EthReceipt;
 import io.chainlens.model.EthTransaction;
 import io.chainlens.model.Network;
+import io.chainlens.model.Hexes;
 import io.chainlens.model.TxFacts;
 
 /**

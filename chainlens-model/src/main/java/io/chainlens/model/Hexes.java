@@ -1,4 +1,4 @@
-package io.chainlens.chain;
+package io.chainlens.model;
 
 import java.math.BigInteger;
 

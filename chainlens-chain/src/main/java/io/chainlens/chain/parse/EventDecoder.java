@@ -12,7 +12,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Uint256;
 
-import io.chainlens.chain.Hexes;
+import io.chainlens.model.Hexes;
 import io.chainlens.model.ApprovalEvent;
 import io.chainlens.model.EthLog;
 import io.chainlens.model.TransferEvent;
