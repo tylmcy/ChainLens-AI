@@ -6,7 +6,26 @@
 
 ## 当前状态
 
-🚧 **开发中**。进度：M0 脚手架 ✅、M1 取证与解析 ✅（34 测试）、M2 规则引擎 ✅（7 条确定性规则 + 35 个正/反/边界测试，共 69 测试全绿）。DeepSeek 工具调用冒烟待配置 API Key；本地嵌入冒烟待网络恢复。设计与里程碑见 [设计文档.md](设计文档.md)。
+🚧 **开发中**。M0～M3 已完成：脚手架、Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录与 OpenAPI。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。下一阶段为 M4 Anvil 本地演示与 Docker Compose。设计与里程碑见 [设计文档.md](设计文档.md)。
+
+## M3 接口与验证
+
+- `POST /api/v1/analyses`：同步 JSON；请求头 `Accept: text/event-stream` 时返回 SSE 进度。
+- `GET /api/v1/analyses/{id}`：查询历史分析。
+- `GET /api/v1/analyses/{id}/stream`：重放历史时间线。
+- `/swagger-ui.html`、`/v3/api-docs`：OpenAPI 文档。
+
+使用 Java 21 运行完整验证（默认排除需要真实模型或 API Key 的 `smoke` 测试）：
+
+```bash
+mvn verify
+```
+
+只运行 PostgreSQL/Testcontainers 测试：
+
+```bash
+mvn verify -Dgroups=db
+```
 
 ## 快速开始（V1 完成后生效）
 
