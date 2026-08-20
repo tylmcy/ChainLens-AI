@@ -166,6 +166,21 @@ public class AnalysisApplicationService {
         }
 
         @Override
+        public void onToolStarted(String toolName) {
+            sendEvent(emitter, "tool.started", Map.of("tool", toolName));
+        }
+
+        @Override
+        public void onToolCompleted(String toolName, boolean success, long durationMs, String summary) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("tool", toolName);
+            data.put("success", success);
+            data.put("durationMs", durationMs);
+            data.put("summary", summary);
+            sendEvent(emitter, "tool.completed", data);
+        }
+
+        @Override
         public void onRulesCompleted(List<Finding> findings) {
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("count", findings.size());
