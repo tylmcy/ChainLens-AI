@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * ChainLens AI 装配与启动入口。
  * M0 阶段仅验证模块图可编译；Web 服务与配置在后续里程碑接入。
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "io.chainlens")
 public class ChainLensApplication {
 
     public static void main(String[] args) {

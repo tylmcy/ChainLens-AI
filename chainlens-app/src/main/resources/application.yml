@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: chainlens
+  ai:
+    # M3 默认走确定性分析与模板报告；M5 接入 LLM 后通过环境变量显式启用提供商。
+    # 无 API Key 时应用仍必须可启动并返回确定性结果。
+    model:
+      chat: ${SPRING_AI_MODEL_CHAT:none}
+      embedding: ${SPRING_AI_MODEL_EMBEDDING:none}
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:chainlens}
+    username: ${POSTGRES_USER:chainlens}
+    password: ${POSTGRES_PASSWORD:chainlens}
+  sql:
+    init:
+      # V1 单表 schema 直接由 schema.sql 初始化（M4 的 docker compose 提供数据库）
+      mode: always
+  threads:
+    virtual:
+      enabled: true
+
+chainlens:
+  eth:
+    rpc-url: ${ETH_RPC_URL:http://127.0.0.1:8545}
+    chain-id: ${ETH_CHAIN_ID:31337}
+  concurrency:
+    max: ${CHAINLENS_CONCURRENCY_MAX:4}
+
+server:
+  shutdown: graceful
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
