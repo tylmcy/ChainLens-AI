@@ -124,13 +124,14 @@ public class ChainLensConfig {
                                     RuleEngine ruleEngine,
                                     ReportGenerator reportGenerator,
                                     EthRpcClient rpcClient,
-                                    KnowledgeSearch knowledgeSearch) {
+                                    KnowledgeSearch knowledgeSearch,
+                                    org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistry) {
         ChatModel model = chatModel.getIfAvailable();
         if (model != null) {
             return new io.chainlens.agent.AgenticAnalysisService(
                     factsProvider, ruleEngine, model, rpcClient,
                     new io.chainlens.chain.parse.CuratedSelectorRegistry(),
-                    knowledgeSearch, reportGenerator);
+                    knowledgeSearch, reportGenerator, meterRegistry.getIfAvailable());
         }
         return new DeterministicAnalysisService(factsProvider, ruleEngine, reportGenerator);
     }
