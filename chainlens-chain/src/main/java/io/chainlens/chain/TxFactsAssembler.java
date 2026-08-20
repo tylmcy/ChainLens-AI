@@ -28,7 +28,7 @@ import io.chainlens.model.TxFacts;
  * 404/503）；仅 getCode 失败是"可容忍"的——记录为"代码不可查"，不阻断分析
  * （设计文档 9.3）。
  */
-public final class TxFactsAssembler {
+public final class TxFactsAssembler implements TxFactsProvider {
 
     private static final String ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -58,6 +58,7 @@ public final class TxFactsAssembler {
         this.calldataDecoder = calldataDecoder;
     }
 
+    @Override
     public TxFacts assemble(String txHash) {
         long chainId = client.chainId();
         Network network = Network.fromChainId(chainId);
