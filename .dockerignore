@@ -1,0 +1,11 @@
+.git
+.idea
+.vscode
+.env
+.m2repo
+**/target
+data
+logs
+eval/results
+web/node_modules
+web/dist

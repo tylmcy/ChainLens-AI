@@ -1,0 +1,9 @@
+spring:
+  ai:
+    model:
+      chat: none
+      embedding: none
+
+chainlens:
+  demo:
+    offline: true
