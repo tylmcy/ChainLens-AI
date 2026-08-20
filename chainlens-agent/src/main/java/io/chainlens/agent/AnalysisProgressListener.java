@@ -22,6 +22,12 @@ public interface AnalysisProgressListener {
     default void onStage(String stage, String message) {
     }
 
+    default void onToolStarted(String toolName) {
+    }
+
+    default void onToolCompleted(String toolName, boolean success, long durationMs, String summary) {
+    }
+
     default void onRulesCompleted(List<Finding> findings) {
     }
 
