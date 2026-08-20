@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # 单元测试 + 打包：无 Docker 依赖，秒级/分钟级反馈
+  # 完整验证：普通测试 + Testcontainers PostgreSQL；GitHub Hosted Runner 自带 Docker。
   # 冒烟测试（@Tag smoke：真实 LLM / 联网模型下载）默认排除，
   # 手动运行：mvn verify -Dsurefire.excludedGroups=none
   unit-and-package:
@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Verify (unit tests, smoke excluded)
+      - name: Verify (smoke excluded, DB via Testcontainers)
         run: mvn -B -ntp verify
       - name: Upload test reports on failure
         if: failure()

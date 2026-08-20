@@ -36,7 +36,10 @@
     <maven.compiler.release>21</maven.compiler.release>
     <spring-ai.version>2.0.0</spring-ai.version>
     <web3j.version>6.0.0</web3j.version>
-    <!-- 默认排除 smoke 标签（真实 LLM / 联网下载模型）；运行方式：mvn verify -Dsurefire.excludedGroups=none -->
+    <testcontainers.version>2.0.5</testcontainers.version>
+    <!-- 默认只排除 smoke 标签（真实 LLM / 联网下载模型）。
+         DB 集成测试默认运行（需要 Docker 守护进程 + 镜像仓库可达）；
+         单独运行 DB 测试：mvn verify -Dgroups=db（smoke 仍会被排除） -->
     <surefire.excludedGroups>smoke</surefire.excludedGroups>
   </properties>
 
@@ -46,6 +49,14 @@
         <groupId>org.springframework.ai</groupId>
         <artifactId>spring-ai-bom</artifactId>
         <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Boot 4.1 不再管理 Testcontainers 版本，显式导入 BOM -->
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
