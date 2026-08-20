@@ -5,6 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import io.chainlens.agent.AnalysisService;
 import io.chainlens.agent.DeterministicAnalysisService;
+import io.chainlens.agent.knowledge.KnowledgeSearch;
 import io.chainlens.agent.ReportGenerator;
 import io.chainlens.agent.TemplateReportGenerator;
 import io.chainlens.api.TraceIdFilter;
@@ -102,7 +104,8 @@ public class ChainLensConfig {
         return new RuleEngine(rules);
     }
 
-    // ---- Agent 层（M3：确定性链路 + 模板报告；M5 替换为 LLM 编排） ----
+    // ---- Agent 层 ----
+    // 有 ChatModel（配置了 LLM Key）→ Agentic 编排；无 → 确定性降级链路（设计文档 9.3）
 
     @Bean
     ReportGenerator reportGenerator() {
@@ -110,8 +113,25 @@ public class ChainLensConfig {
     }
 
     @Bean
-    AnalysisService analysisService(TxFactsProvider factsProvider, RuleEngine ruleEngine,
-                                    ReportGenerator reportGenerator) {
+    KnowledgeSearch knowledgeSearch() {
+        // M5：知识检索空实现（RAG 于 M7 接入），缺失不影响主链路
+        return new io.chainlens.agent.knowledge.NoopKnowledgeSearch();
+    }
+
+    @Bean
+    AnalysisService analysisService(org.springframework.beans.factory.ObjectProvider<ChatModel> chatModel,
+                                    TxFactsProvider factsProvider,
+                                    RuleEngine ruleEngine,
+                                    ReportGenerator reportGenerator,
+                                    EthRpcClient rpcClient,
+                                    KnowledgeSearch knowledgeSearch) {
+        ChatModel model = chatModel.getIfAvailable();
+        if (model != null) {
+            return new io.chainlens.agent.AgenticAnalysisService(
+                    factsProvider, ruleEngine, model, rpcClient,
+                    new io.chainlens.chain.parse.CuratedSelectorRegistry(),
+                    knowledgeSearch, reportGenerator);
+        }
         return new DeterministicAnalysisService(factsProvider, ruleEngine, reportGenerator);
     }
 
