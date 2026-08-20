@@ -6,7 +6,14 @@
 
 ## 当前状态
 
-🚧 **开发中**。M0～M4 已完成：脚手架、Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI，以及可复现的 Anvil + Docker Compose 本地演示。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。下一阶段为 M5 Agent 编排。设计与里程碑见 [设计文档.md](设计文档.md)。
+🚧 **开发中**。M0～M5 已完成：脚手架、Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、可复现的 Anvil + Docker Compose 本地演示，以及 **M5 Agent 编排**（6 个只读工具、手动工具调用循环、4 道护栏、事实一致性校验、工具调用指标）。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。下一阶段为 M6 Web 演示页。设计与里程碑见 [设计文档.md](设计文档.md)。
+
+## M5 Agent 编排
+
+- 设置 `SPRING_AI_MODEL_CHAT=deepseek` + `DEEPSEEK_API_KEY` 后自动启用 LLM 编排（否则走确定性降级链路）；
+- 工具调用步骤随 `tool_steps` 字段返回，SSE 直播 `tool.started` / `tool.completed` 事件；
+- 护栏：强制取证 → 上下文装配 → 事实一致性校验 → Schema 校验+重试+降级；
+- 指标：`/actuator/metrics`（如 `chainlens.tool.calls` 成功率）。
 
 ## M3 接口与验证
 
