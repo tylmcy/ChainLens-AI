@@ -38,6 +38,11 @@
       <groupId>org.springframework.ai</groupId>
       <artifactId>spring-ai-starter-model-deepseek</artifactId>
     </dependency>
+    <!-- 工具调用可观测指标（MeterRegistry 可选注入，无注册表时静默跳过） -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -125,7 +125,8 @@ class AgenticAnalysisServiceTest {
                 FAKE_RPC,
                 new CuratedSelectorRegistry(),
                 new NoopKnowledgeSearch(),
-                new TemplateReportGenerator());
+                new TemplateReportGenerator(),
+                null);
     }
 
     @Test

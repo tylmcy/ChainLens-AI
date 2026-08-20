@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
@@ -35,19 +36,22 @@ public final class AgentTools {
     private final SelectorRegistry selectorRegistry;
     private final KnowledgeSearch knowledgeSearch;
     private final AnalysisProgressListener listener;
+    private final MeterRegistry meterRegistry;
 
     public AgentTools(TxFacts facts,
                       List<Finding> findings,
                       EthRpcClient rpcClient,
                       SelectorRegistry selectorRegistry,
                       KnowledgeSearch knowledgeSearch,
-                      AnalysisProgressListener listener) {
+                      AnalysisProgressListener listener,
+                      MeterRegistry meterRegistry) {
         this.facts = facts;
         this.findings = findings;
         this.rpcClient = rpcClient;
         this.selectorRegistry = selectorRegistry;
         this.knowledgeSearch = knowledgeSearch;
         this.listener = listener;
+        this.meterRegistry = meterRegistry;
     }
 
     @Tool(description = "获取已完成的链上取证案卷：交易、回执、区块、ETH 变化、ERC-20 事件与 calldata 解析。所有事实均来自 Ethereum JSON-RPC。")
@@ -98,12 +102,14 @@ public final class AgentTools {
         });
     }
 
-    /** 记录工具调用步骤并转发进度事件。 */
+    /** 记录工具调用步骤并转发进度事件（设计文档 4.6：工具调用成功率指标）。 */
     private String timed(String toolName, String arguments, java.util.function.Supplier<String> action) {
         Instant startedAt = Instant.now();
         listener.onToolStarted(toolName);
+        boolean success = false;
         try {
             String result = action.get();
+            success = true;
             long duration = java.time.Duration.between(startedAt, Instant.now()).toMillis();
             String summary = result.length() > 120 ? result.substring(0, 120) + "…" : result;
             ToolStepRecorder.record(toolName, arguments, startedAt, duration, true, summary);
@@ -115,7 +121,17 @@ public final class AgentTools {
             listener.onToolCompleted(toolName, false, duration, e.getMessage());
             log.warn("工具调用失败 {}: {}", toolName, e.getMessage());
             return json(Map.of("error", e.getMessage()));
+        } finally {
+            recordMetrics(toolName, success);
         }
+    }
+
+    private void recordMetrics(String toolName, boolean success) {
+        if (meterRegistry == null) {
+            return;
+        }
+        meterRegistry.counter("chainlens.tool.calls", "tool", toolName, "status", success ? "success" : "failure")
+                .increment();
     }
 
     private static String json(Object value) {

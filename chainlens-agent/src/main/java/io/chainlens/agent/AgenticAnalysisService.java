@@ -71,6 +71,7 @@ public final class AgenticAnalysisService implements AnalysisService {
     private final SelectorRegistry selectorRegistry;
     private final KnowledgeSearch knowledgeSearch;
     private final ReportGenerator fallbackGenerator;
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
     private final String systemPrompt;
 
     public AgenticAnalysisService(TxFactsProvider factsProvider,
@@ -79,7 +80,8 @@ public final class AgenticAnalysisService implements AnalysisService {
                                   EthRpcClient rpcClient,
                                   SelectorRegistry selectorRegistry,
                                   KnowledgeSearch knowledgeSearch,
-                                  ReportGenerator fallbackGenerator) {
+                                  ReportGenerator fallbackGenerator,
+                                  io.micrometer.core.instrument.MeterRegistry meterRegistry) {
         this.factsProvider = factsProvider;
         this.ruleEngine = ruleEngine;
         this.chatModel = chatModel;
@@ -87,6 +89,7 @@ public final class AgenticAnalysisService implements AnalysisService {
         this.selectorRegistry = selectorRegistry;
         this.knowledgeSearch = knowledgeSearch;
         this.fallbackGenerator = fallbackGenerator;
+        this.meterRegistry = meterRegistry;
         this.systemPrompt = loadSystemPrompt();
     }
 
@@ -106,7 +109,7 @@ public final class AgenticAnalysisService implements AnalysisService {
             // ---- 阶段 B：LLM 工具调用循环 ----
             listener.onStage("agent", "LLM 规划并调用分析工具");
             AgentTools tools = new AgentTools(facts, findings, rpcClient, selectorRegistry,
-                    knowledgeSearch, listener);
+                    knowledgeSearch, listener, meterRegistry);
             List<ToolCallback> callbacks = List.of(MethodToolCallbackProvider.builder()
                     .toolObjects(tools).build().getToolCallbacks());
             ToolCallingChatOptions toolOptions = ToolCallingChatOptions.builder()
