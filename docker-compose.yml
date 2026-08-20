@@ -1,0 +1,90 @@
+name: chainlens
+
+x-local-no-proxy: &local-no-proxy
+  HTTP_PROXY: ""
+  http_proxy: ""
+  HTTPS_PROXY: ""
+  https_proxy: ""
+  NO_PROXY: "localhost,127.0.0.1,anvil,postgres,chainlens-app"
+  no_proxy: "localhost,127.0.0.1,anvil,postgres,chainlens-app"
+
+services:
+  postgres:
+    profiles: ["demo-offline"]
+    image: pgvector/pgvector:0.8.6-pg17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chainlens}
+      POSTGRES_USER: ${POSTGRES_USER:-chainlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chainlens}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - chainlens-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  anvil:
+    profiles: ["demo-offline"]
+    image: ghcr.io/foundry-rs/foundry:v1.7.1
+    entrypoint: ["anvil"]
+    # 不设置 block-time，使用 Anvil 默认的即时出块模式。
+    command: ["--host", "0.0.0.0", "--chain-id", "31337"]
+    ports:
+      - "${ANVIL_PORT:-8545}:8545"
+    healthcheck:
+      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://127.0.0.1:8545"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  demo-seed:
+    profiles: ["demo-offline"]
+    build:
+      context: ./scripts/anvil-demo
+      args:
+        HTTP_PROXY: ""
+        HTTPS_PROXY: ""
+    environment:
+      <<: *local-no-proxy
+      ETH_RPC_URL: http://anvil:8545
+      DEMO_OUTPUT_DIR: /demo-output
+    volumes:
+      - ./data/anvil-demo:/demo-output
+    depends_on:
+      anvil:
+        condition: service_healthy
+    restart: "no"
+
+  chainlens-app:
+    profiles: ["demo-offline"]
+    build:
+      context: .
+      dockerfile: chainlens-app/Dockerfile
+      args:
+        HTTP_PROXY: ""
+        HTTPS_PROXY: ""
+    environment:
+      <<: *local-no-proxy
+      SPRING_PROFILES_ACTIVE: demo-offline
+      SPRING_AI_MODEL_CHAT: none
+      SPRING_AI_MODEL_EMBEDDING: none
+      ETH_RPC_URL: http://anvil:8545
+      ETH_CHAIN_ID: 31337
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-chainlens}
+      POSTGRES_USER: ${POSTGRES_USER:-chainlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chainlens}
+    ports:
+      - "${CHAINLENS_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      demo-seed:
+        condition: service_completed_successfully
+
+volumes:
+  chainlens-postgres:
