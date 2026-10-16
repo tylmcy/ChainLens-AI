@@ -6,7 +6,40 @@
 
 ## 当前状态
 
-🚧 **开发中**。M0～M5 已完成：脚手架、Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、可复现的 Anvil + Docker Compose 本地演示，以及 **M5 Agent 编排**（6 个只读工具、手动工具调用循环、4 道护栏、事实一致性校验、工具调用指标）。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。下一阶段为 M6 Web 演示页。设计与里程碑见 [设计文档.md](设计文档.md)。
+🚧 **开发中**。M0～M6 的工程实现与自动化验收已完成；学习验收仍需由使用者亲自完成。现有能力包括 Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、Anvil 本地演示、Agent 工具调用编排，以及 Web 演示页。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。设计与里程碑见 [设计文档.md](设计文档.md)。
+
+## M6 Web 演示页
+
+页面入口：启动本地演示后访问 <http://localhost:8080/>。输入 `data/anvil-demo/transactions.json` 中任意 `txHash`，可查看 SSE 分析步骤、交易摘要、风险规则、证据的 RPC 方法和 JSON Pointer，以及最近分析。浏览器只保存最近 10 条分析 ID 索引；完整报告保存在 PostgreSQL。页面会明确标出 LLM 未启用时的“确定性降级报告”。
+
+已用真实 Anvil 交易在浏览器走通“输入 → SSE 时间线 → 报告 → 展开原始证据 → 历史恢复”；桌面 1280px 与窄屏 390px 下均无横向溢出。以下截图展示初始页面，报告请用本地演示数据亲自生成。
+
+![ChainLens 桌面首页](docs/screenshots/m6-desktop-start.png)
+
+![ChainLens 窄屏首页](docs/screenshots/m6-mobile-start.png)
+
+本地开发需要 Java 21、Node 22 和 pnpm 11.9.0：
+
+```bash
+# 终端 1：先启动后端及 Anvil/PostgreSQL，或使用下方 Docker 演示
+./scripts/demo-up.sh
+# 终端 2：前端热更新，代理 /api 到 localhost:8080
+cd web
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+前端验证与单一 Boot 制品：
+
+```bash
+cd web && pnpm typecheck && pnpm test && pnpm build
+cd ..
+mvn -pl chainlens-app -am -Pweb package
+```
+
+`-Pweb` 需要宿主机有 pnpm；默认 `mvn verify` 不调用 Node。Docker 完整构建自带固定 Node 22.23.2 阶段，不要求 Mac 安装 Node。若页面无法加载，先检查 `docker compose ps` 和 `http://localhost:8080/actuator/health`；若分析返回 RPC 错误，确认 Anvil 已就绪并使用本地演示交易哈希。若历史条目失效，可在页面移除本地索引；这不会删除数据库记录。
+
+如果你把 M6 当作学习项目，请按 [M6 学习验收清单](docs/M6-学习验收.md) 自己解释、修改、复现和排错；自动测试通过不代表这些技能已经掌握。
 
 ## M5 Agent 编排
 

@@ -23,6 +23,7 @@ node_modules/
 web/dist/
 dist/
 .pnpm-store/
+web/tsconfig.tsbuildinfo
 
 # ---- 密钥与本地环境 ----
 .env
