@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Language: zh-CN
+  All artifacts must be written in zh-CN.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Project: ChainLens AI, an evidence-based Ethereum transaction analysis agent.
+  Source of truth: 设计文档.md defines the approved V1 architecture, scope, and milestones.
+  Runtime baseline: Java 21, Spring Boot, Spring AI, PostgreSQL with pgvector, and Docker Compose.
+  Local hardware: MacBook Air M5 (Apple Silicon/arm64); local dependencies and images must support arm64.
+  Safety: on-chain facts come from Ethereum JSON-RPC; deterministic rules take priority over LLM output.
+  Security: never use real private keys, seed phrases, or real assets; secrets come only from environment variables.
+  Scope: V1 analyzes Ethereum transactions only; no automatic trading, wallet history analysis, or microservices.
+  Workflow: preserve small Conventional Commits and verify every milestone with reproducible tests.
+
+rules:
+  proposal:
+    - Include explicit in-scope and out-of-scope boundaries.
+    - State how the change preserves evidence traceability and deterministic fallback behavior when relevant.
+  specs:
+    - Every requirement must have at least one observable WHEN/THEN scenario.
+    - Important analysis conclusions must preserve evidence, ruleId, confidence, and raw-data location requirements.
+  design:
+    - Explain Apple Silicon compatibility and resource impact for local build or runtime changes.
+    - Prefer the simplest modular-monolith design that satisfies the approved V1 scope.
+  tasks:
+    - Break work into small, independently verifiable steps.
+    - Include automated tests and a user-visible verification step for each milestone.
+    - Do not mark a learning milestone complete solely because generated code compiles or tests pass.
+
+operations:
+  apply:
+    guidance:
+      - Add Chinese comments that explain the purpose of non-obvious methods and boundary logic.
+      - Preserve unrelated user changes, especially uncommitted files.
+  archive:
+    guidance:
+      - Summarize verification evidence and any acceptance item that remains unverified.
