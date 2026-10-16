@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChainLens AI · 链上交易分析</title>
+    <meta name="description" content="以真实 Ethereum 链上证据解释一笔交易，并展示规则依据与分析过程。" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-row">
+        <a class="brand" href="/" aria-label="ChainLens AI 首页"><span class="brand-mark">C<span>·</span>L</span><span>ChainLens <em>AI</em></span></a>
+        <span class="header-note">ETHEREUM · EVIDENCE DESK</span>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="input-section" class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow"><span class="eyebrow-line"></span> 链上交易分析工作台 <span class="eyebrow-index">/ 001</span></div>
+        <h1 id="hero-title">让每一笔交易，<br /><span>有据可查。</span></h1>
+        <p class="lead">输入 Ethereum 交易哈希，跟随分析步骤，查看风险规则与原始链上证据。事实来自 JSON-RPC，结论可以逐项核对。</p>
+        <form id="analysis-form">
+          <label for="tx-input">交易哈希或包含哈希的问题</label>
+          <div class="input-row">
+            <input id="tx-input" type="text" placeholder="0x… 或「帮我分析 0x… 这笔交易」" autocomplete="off" spellcheck="false" aria-describedby="input-hint input-error" />
+            <button type="submit" id="submit-btn"><span>开始分析</span><span aria-hidden="true">↗</span></button>
+          </div>
+          <p id="input-hint" class="input-hint">支持完整 0x + 64 位交易哈希 · 当前仅分析单笔 Ethereum 交易</p>
+          <p id="input-error" class="error hidden" role="alert"></p>
+        </form>
+        <div class="hero-meta"><span><i class="status-dot"></i> 真实链上数据</span><span>确定性规则优先</span><span>证据可追溯</span></div>
+      </section>
+
+      <div id="status-message" class="status-message" role="status" aria-live="polite">准备就绪。输入交易哈希开始分析。</div>
+
+      <section id="timeline-section" class="panel hidden" aria-labelledby="timeline-title">
+        <div class="section-heading"><span class="section-number">01 / PROCESS</span><h2 id="timeline-title">分析过程</h2><p>实时展示取证、规则判断与 Agent 工具步骤</p></div>
+        <ol id="timeline"></ol>
+      </section>
+
+      <section id="report-section" class="panel hidden" aria-labelledby="report-title">
+        <div class="section-heading"><span class="section-number">02 / REPORT</span><h2 id="report-title">证据报告</h2><p>先看事实，再看风险判断</p></div>
+        <div id="report"></div>
+      </section>
+
+      <section id="history-section" class="panel history-panel" aria-labelledby="history-title">
+        <div class="section-heading"><span class="section-number">03 / RECENT</span><h2 id="history-title">最近分析</h2><p>仅在此浏览器保存最近 10 条索引</p></div>
+        <ul id="history-list"></ul>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="shell footer-row"><span>CHAINLENS AI / EVIDENCE BEFORE CONCLUSIONS</span><p>基于公开链上数据 · 不构成投资建议，也不是完整的安全审计</p></div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
