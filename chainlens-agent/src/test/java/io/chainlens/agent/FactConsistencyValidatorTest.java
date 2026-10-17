@@ -86,6 +86,15 @@ class FactConsistencyValidatorTest {
     }
 
     @Test
+    @DisplayName("区块时间戳来自案卷 → 不误报为证据外长数字")
+    void blockTimestampPasses() {
+        var facts = AgTxFactsFactory.create().build();
+        var report = report("区块时间戳为 1700000000。", rulesFindings(), List.of(DISCLAIMER));
+
+        assertThat(FactConsistencyValidator.validate(report, facts, rulesFindings())).isEmpty();
+    }
+
+    @Test
     @DisplayName("limitations 首条不是免责声明 → 违规（设计文档 9.5 硬约束）")
     void missingDisclaimerDetected() {
         var facts = AgTxFactsFactory.create().build();

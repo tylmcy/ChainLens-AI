@@ -23,12 +23,13 @@ import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 
-import io.chainlens.agent.knowledge.KnowledgeSearch;
+import io.chainlens.knowledge.KnowledgeSearch;
 import io.chainlens.chain.TxFactsProvider;
 import io.chainlens.chain.parse.SelectorRegistry;
 import io.chainlens.chain.rpc.EthRpcClient;
@@ -112,8 +113,7 @@ public final class AgenticAnalysisService implements AnalysisService {
                     knowledgeSearch, listener, meterRegistry);
             List<ToolCallback> callbacks = List.of(MethodToolCallbackProvider.builder()
                     .toolObjects(tools).build().getToolCallbacks());
-            ToolCallingChatOptions toolOptions = ToolCallingChatOptions.builder()
-                    .toolCallbacks(callbacks).build();
+            ToolCallingChatOptions toolOptions = compatibleToolOptions(callbacks);
 
             List<Message> messages = new ArrayList<>();
             messages.add(new SystemMessage(systemPrompt));
@@ -159,18 +159,32 @@ public final class AgenticAnalysisService implements AnalysisService {
             boolean degraded = false;
             AnalysisReport report = null;
             messages.add(new UserMessage("请输出最终报告 JSON（只输出 JSON，不要其他内容）。"));
-            for (int attempt = 1; attempt <= MAX_REPORT_ATTEMPTS; attempt++) {
-                String candidate = (finalText != null) ? finalText : textAnswer(messages, toolOptions);
-                ReportAssembly assembly = assembleReport(candidate, facts, findings);
+            if (finalText != null) {
+                // 模型在工具循环末尾有时已经输出合法报告，先复用它以减少一次调用。
+                ReportAssembly initial = assembleReport(finalText, facts, findings,
+                        tools.returnedKnowledgeSources(), tools.knowledgeUnavailableReason());
+                if (initial.report() != null && initial.violations().isEmpty()) {
+                    report = initial.report();
+                } else {
+                    log.warn("LLM 工具循环结束语不是合法报告: {}", initial.violations());
+                    messages.add(new UserMessage("你的过渡回复不是最终报告："
+                            + String.join("；", initial.violations()) + "。现在请输出完整 JSON。"));
+                }
+            }
+            for (int attempt = 1; report == null && attempt <= MAX_REPORT_ATTEMPTS; attempt++) {
+                String candidate = textAnswer(messages, toolOptions);
+                ReportAssembly assembly = assembleReport(candidate, facts, findings,
+                        tools.returnedKnowledgeSources(), tools.knowledgeUnavailableReason());
                 if (assembly.report() != null && assembly.violations().isEmpty()) {
                     report = assembly.report();
                     break;
                 }
+                // 只记录校验原因，不记录完整模型输出，避免把案卷数据大量写入日志。
+                log.warn("LLM 报告第 {} 次校验未通过: {}", attempt, assembly.violations());
                 String feedback = assembly.report() == null
                         ? assembly.violations().isEmpty() ? "输出不是合法 JSON" : assembly.violations().get(0)
                         : String.join("；", assembly.violations());
                 messages.add(new UserMessage("你的上一条输出未通过校验：" + feedback + "。请修正后重新输出完整 JSON。"));
-                finalText = null;
             }
             if (report == null) {
                 log.warn("LLM 报告生成未通过校验，降级为模板报告");
@@ -218,8 +232,28 @@ public final class AgenticAnalysisService implements AnalysisService {
         return response.getResult().getOutput().getText();
     }
 
+    /**
+     * 在模型自带的默认选项上追加工具。
+     *
+     * <p>Spring AI 2.0 的部分 Provider（例如 DeepSeek）会把请求选项转回自己的
+     * Provider 类型。直接新建通用 {@code DefaultToolCallingChatOptions} 会在运行时触发
+     * {@code ClassCastException}。通过 {@link ChatModel#getOptions()} 的 {@code mutate()}
+     * 保留具体 Provider 类型，同时让业务代码仍只依赖 Spring AI 的通用接口。
+     */
+    private ToolCallingChatOptions compatibleToolOptions(List<ToolCallback> callbacks) {
+        ChatOptions defaultOptions = chatModel.getOptions();
+        if (defaultOptions instanceof ToolCallingChatOptions providerOptions) {
+            return providerOptions.mutate().toolCallbacks(callbacks).build();
+        }
+        return ToolCallingChatOptions.builder().toolCallbacks(callbacks).build();
+    }
+
     /** LLM JSON → 合并机器字段 → 校验（返回违规列表）。 */
-    private ReportAssembly assembleReport(String candidate, TxFacts facts, List<Finding> rulesFindings) {
+    private ReportAssembly assembleReport(String candidate,
+                                          TxFacts facts,
+                                          List<Finding> rulesFindings,
+                                          Set<String> allowedKnowledgeSources,
+                                          String knowledgeUnavailableReason) {
         List<String> violations = new ArrayList<>();
         try {
             JsonNode root = MAPPER.readTree(extractJson(candidate));
@@ -234,6 +268,9 @@ public final class AgenticAnalysisService implements AnalysisService {
             root.path("actions").forEach(a -> actions.add(a.asText()));
             List<String> limitations = new ArrayList<>();
             root.path("limitations").forEach(l -> limitations.add(l.asText()));
+            if (knowledgeUnavailableReason != null && !knowledgeUnavailableReason.isBlank()) {
+                limitations.add("知识增强未使用：" + knowledgeUnavailableReason);
+            }
 
             // LLM 的 findings 必须覆盖每个 ruleId（多/少/重复都违规）
             Map<String, String[]> llmFindings = new HashMap<>();
@@ -261,16 +298,36 @@ public final class AgenticAnalysisService implements AnalysisService {
                         title, description, ruleFinding.evidence()));
             }
 
+            List<AnalysisReport.Source> sources = new ArrayList<>(List.of(
+                    new AnalysisReport.Source("CHAIN", "交易", "eth_getTransactionByHash / " + facts.transaction().hash()),
+                    new AnalysisReport.Source("CHAIN", "回执", "eth_getTransactionReceipt / " + facts.transaction().hash()),
+                    new AnalysisReport.Source("CHAIN", "区块", "eth_getBlockByNumber / " + facts.receipt().blockNumber())
+            ));
+            // CHAIN 来源由机器固定生成；LLM 只能从本次 searchKnowledge 真正返回过的白名单中选 KNOWLEDGE。
+            root.path("sources").forEach(source -> {
+                String type = source.path("type").asText("");
+                String reference = source.path("reference").asText("");
+                if ("KNOWLEDGE".equals(type)) {
+                    if (!allowedKnowledgeSources.contains(reference)) {
+                        violations.add("引用了工具未返回的知识来源：" + reference);
+                    } else {
+                        String label = source.path("label").asText("知识库");
+                        AnalysisReport.Source approved = new AnalysisReport.Source("KNOWLEDGE", label, reference);
+                        if (!sources.contains(approved)) {
+                            sources.add(approved);
+                        }
+                    }
+                } else if (!type.isBlank() && !"CHAIN".equals(type)) {
+                    violations.add("未知来源类型：" + type);
+                }
+            });
+
             AnalysisReport report = new AnalysisReport(
                     summary,
                     facts.receipt().isSuccess() ? AnalysisStatus.SUCCESS : AnalysisStatus.FAILED,
                     actions,
                     merged,
-                    List.of(
-                            new AnalysisReport.Source("CHAIN", "交易", "eth_getTransactionByHash / " + facts.transaction().hash()),
-                            new AnalysisReport.Source("CHAIN", "回执", "eth_getTransactionReceipt / " + facts.transaction().hash()),
-                            new AnalysisReport.Source("CHAIN", "区块", "eth_getBlockByNumber / " + facts.receipt().blockNumber())
-                    ),
+                    sources,
                     limitations
             );
             violations.addAll(FactConsistencyValidator.validate(report, facts, rulesFindings));

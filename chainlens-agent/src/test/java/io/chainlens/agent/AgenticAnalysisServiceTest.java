@@ -13,9 +13,12 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.deepseek.DeepSeekChatOptions;
 
-import io.chainlens.agent.knowledge.NoopKnowledgeSearch;
+import io.chainlens.knowledge.NoopKnowledgeSearch;
+import io.chainlens.knowledge.KnowledgeSearch;
 import io.chainlens.chain.parse.CuratedSelectorRegistry;
 import io.chainlens.chain.rpc.EthRpcClient;
 import io.chainlens.model.ApprovalEvent;
@@ -41,15 +44,28 @@ class AgenticAnalysisServiceTest {
     private static final class FakeChatModel implements ChatModel {
 
         private final Deque<ChatResponse> script;
+        private final ChatOptions defaultOptions;
+        private ChatOptions lastRequestOptions;
 
         FakeChatModel(ChatResponse... responses) {
+            this(null, responses);
+        }
+
+        FakeChatModel(ChatOptions defaultOptions, ChatResponse... responses) {
+            this.defaultOptions = defaultOptions;
             this.script = new ArrayDeque<>(List.of(responses));
         }
 
         @Override
         public ChatResponse call(Prompt prompt) {
+            lastRequestOptions = prompt.getOptions();
             assertThat(script).as("脚本耗尽（模型被调用了超过预期次数）").isNotEmpty();
             return script.poll();
+        }
+
+        @Override
+        public ChatOptions getOptions() {
+            return defaultOptions;
         }
     }
 
@@ -75,6 +91,13 @@ class AgenticAnalysisServiceTest {
                   "limitations": ["%s"]
                 }
                 """.formatted(DISCLAIMER);
+    }
+
+    private static String validReportJsonWithSource(String source) {
+        return validReportJson().replace(
+                "\"limitations\":",
+                "\"sources\": [{\"type\":\"KNOWLEDGE\",\"label\":\"授权知识\",\"reference\":\""
+                        + source + "\"}],\n  \"limitations\":");
     }
 
     private static TxFacts factsWithUnlimitedApproval() {
@@ -118,13 +141,17 @@ class AgenticAnalysisServiceTest {
     };
 
     private static AgenticAnalysisService service(ChatModel model, TxFacts facts) {
+        return service(model, facts, new NoopKnowledgeSearch());
+    }
+
+    private static AgenticAnalysisService service(ChatModel model, TxFacts facts, KnowledgeSearch knowledgeSearch) {
         return new AgenticAnalysisService(
                 hash -> facts,
                 new RuleEngine(List.of(new UnlimitedApprovalRule())),
                 model,
                 FAKE_RPC,
                 new CuratedSelectorRegistry(),
-                new NoopKnowledgeSearch(),
+                knowledgeSearch,
                 new TemplateReportGenerator(),
                 null);
     }
@@ -152,6 +179,23 @@ class AgenticAnalysisServiceTest {
         assertThat(finding.confidence()).isEqualTo(1.0);
         assertThat(finding.title()).isEqualTo("检测到无限额度授权");
         assertThat(result.report().limitations().get(0)).isEqualTo(DISCLAIMER);
+    }
+
+    @Test
+    @DisplayName("Provider 默认选项保留具体类型，避免 DeepSeek 工具调用转型失败")
+    void preservesProviderSpecificToolOptions() {
+        FakeChatModel model = new FakeChatModel(
+                DeepSeekChatOptions.builder().build(),
+                toolCall("getCaseFacts", "{}"),
+                toolCall("getRiskFindings", "{}"),
+                text(validReportJson()));
+
+        AnalysisResult result = service(model, factsWithUnlimitedApproval())
+                .analyze(TX_HASH, AnalysisProgressListener.noop());
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(model.lastRequestOptions).isInstanceOf(DeepSeekChatOptions.class);
+        assertThat(((DeepSeekChatOptions) model.lastRequestOptions).getToolCallbacks()).isNotEmpty();
     }
 
     @Test
@@ -211,5 +255,91 @@ class AgenticAnalysisServiceTest {
         assertThat(result.report().limitations().get(0)).isEqualTo(DISCLAIMER);
         assertThat(result.findings()).extracting(Finding::ruleId)
                 .containsExactly("ERC20-UNLIMITED-APPROVAL");
+    }
+
+    @Test
+    @DisplayName("知识命中：只允许报告引用工具本次实际返回的 KNOWLEDGE source")
+    void acceptsOnlyReturnedKnowledgeSource() {
+        String source = "docs/knowledge/erc20-unlimited-approval.md#为什么需要留意";
+        KnowledgeSearch search = query -> KnowledgeSearch.SearchResult.available(List.of(
+                new KnowledgeSearch.KnowledgeHit("授权风险解释", source, "无限授权",
+                        List.of("ERC20-UNLIMITED-APPROVAL"), 0.95)));
+        FakeChatModel model = new FakeChatModel(
+                toolCall("searchKnowledge", "{\"query\":\"无限授权风险\"}"),
+                toolCall("getCaseFacts", "{}"),
+                toolCall("getRiskFindings", "{}"),
+                text(validReportJsonWithSource(source)));
+
+        AnalysisResult result = service(model, factsWithUnlimitedApproval(), search)
+                .analyze(TX_HASH, AnalysisProgressListener.noop());
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(result.report().sources()).anySatisfy(item -> {
+            assertThat(item.type()).isEqualTo("KNOWLEDGE");
+            assertThat(item.reference()).isEqualTo(source);
+        });
+    }
+
+    @Test
+    @DisplayName("伪造知识来源触发重试，知识片段中的假交易事实不能进入报告")
+    void rejectsUnknownSourceAndKnowledgeFacts() {
+        String allowed = "docs/knowledge/erc20-unlimited-approval.md#含义";
+        String fakeHash = "0x9999999999999999999999999999999999999999999999999999999999999999";
+        KnowledgeSearch search = query -> KnowledgeSearch.SearchResult.available(List.of(
+                new KnowledgeSearch.KnowledgeHit("示例交易 " + fakeHash + " 金额 999999999999", allowed,
+                        "无限授权", List.of("ERC20-UNLIMITED-APPROVAL"), 0.92)));
+        String poisoned = validReportJsonWithSource("docs/knowledge/not-returned.md#伪造")
+                .replace("该交易在 anvil-local 网络上执行成功", "示例交易 " + fakeHash + " 执行成功");
+        FakeChatModel model = new FakeChatModel(
+                toolCall("searchKnowledge", "{\"query\":\"无限授权\"}"),
+                toolCall("getCaseFacts", "{}"),
+                toolCall("getRiskFindings", "{}"),
+                text(poisoned),
+                text(validReportJsonWithSource(allowed)));
+
+        AnalysisResult result = service(model, factsWithUnlimitedApproval(), search)
+                .analyze(TX_HASH, AnalysisProgressListener.noop());
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(result.report().summary()).doesNotContain(fakeHash, "999999999999");
+        assertThat(result.findings()).extracting(Finding::ruleId)
+                .containsExactly("ERC20-UNLIMITED-APPROVAL");
+    }
+
+    @Test
+    @DisplayName("知识库不可用不阻断主链路，并由机器补充限制说明")
+    void unavailableKnowledgeDoesNotBreakAnalysis() {
+        KnowledgeSearch search = query -> KnowledgeSearch.SearchResult.unavailable(
+                KnowledgeSearch.Availability.UNAVAILABLE, "向量数据库不可用");
+        FakeChatModel model = new FakeChatModel(
+                toolCall("searchKnowledge", "{\"query\":\"无限授权\"}"),
+                toolCall("getCaseFacts", "{}"),
+                toolCall("getRiskFindings", "{}"),
+                text(validReportJson()));
+
+        AnalysisResult result = service(model, factsWithUnlimitedApproval(), search)
+                .analyze(TX_HASH, AnalysisProgressListener.noop());
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(result.report().sources()).noneMatch(source -> "KNOWLEDGE".equals(source.type()));
+        assertThat(result.report().limitations()).contains("知识增强未使用：向量数据库不可用");
+    }
+
+    @Test
+    @DisplayName("知识检索可用但无命中时不伪造 KNOWLEDGE 来源")
+    void emptyKnowledgeResultDoesNotInventSource() {
+        KnowledgeSearch search = query -> KnowledgeSearch.SearchResult.available(List.of());
+        FakeChatModel model = new FakeChatModel(
+                toolCall("searchKnowledge", "{\"query\":\"无关问题\"}"),
+                toolCall("getCaseFacts", "{}"),
+                toolCall("getRiskFindings", "{}"),
+                text(validReportJson()));
+
+        AnalysisResult result = service(model, factsWithUnlimitedApproval(), search)
+                .analyze(TX_HASH, AnalysisProgressListener.noop());
+
+        assertThat(result.degraded()).isFalse();
+        assertThat(result.report().sources()).noneMatch(source -> "KNOWLEDGE".equals(source.type()));
+        assertThat(result.report().limitations()).doesNotContain("知识增强未使用：知识库未启用");
     }
 }

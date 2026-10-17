@@ -1,16 +1,23 @@
 package io.chainlens.agent;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 
-import io.chainlens.agent.knowledge.KnowledgeSearch;
+import io.chainlens.knowledge.KnowledgeSearch;
 import io.chainlens.chain.parse.SelectorRegistry;
 import io.chainlens.chain.rpc.EthRpcClient;
 import io.chainlens.model.Finding;
@@ -28,7 +35,8 @@ import io.chainlens.model.TxFacts;
 public final class AgentTools {
 
     private static final Logger log = LoggerFactory.getLogger(AgentTools.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    // TxFacts/Evidence 含 Instant；显式序列化为 ISO-8601，避免工具结果因时间字段失败而退化成 {}。
+    private static final ObjectMapper MAPPER = toolObjectMapper();
 
     private final TxFacts facts;
     private final List<Finding> findings;
@@ -37,6 +45,9 @@ public final class AgentTools {
     private final KnowledgeSearch knowledgeSearch;
     private final AnalysisProgressListener listener;
     private final MeterRegistry meterRegistry;
+    private final Set<String> returnedKnowledgeSources = new LinkedHashSet<>();
+    private boolean knowledgeSearchAttempted;
+    private String knowledgeUnavailableReason = "";
 
     public AgentTools(TxFacts facts,
                       List<Finding> findings,
@@ -92,14 +103,29 @@ public final class AgentTools {
                 "candidates", selectorRegistry.candidates(selector))));
     }
 
-    @Tool(description = "检索知识库（规则解释、Ethereum 术语、安全提示）。知识库只提供解释性知识，不提供链上事实。")
+    @Tool(description = "检索知识库（规则解释、Ethereum 术语、安全提示）。查询应包含已命中的 ruleId 或具体风险名称，不要使用“风险分析”等泛化词。知识库只提供解释性知识，不提供链上事实。")
     public String searchKnowledge(String query) {
         return timed("searchKnowledge", json(Map.of("query", query)), () -> {
-            List<KnowledgeSearch.KnowledgeHit> hits = knowledgeSearch.search(query);
+            knowledgeSearchAttempted = true;
+            KnowledgeSearch.SearchResult result = knowledgeSearch.search(query);
+            result.hits().forEach(hit -> returnedKnowledgeSources.add(hit.source()));
+            knowledgeUnavailableReason = result.available() ? "" : result.reason();
             return json(Map.of(
-                    "available", !hits.isEmpty(),
-                    "hits", hits));
+                    "available", result.available(),
+                    "status", result.status(),
+                    "reason", result.reason(),
+                    "hits", result.hits()));
         });
+    }
+
+    /** 本次工具调用真正返回过的知识来源，供最终报告白名单校验。 */
+    Set<String> returnedKnowledgeSources() {
+        return Set.copyOf(returnedKnowledgeSources);
+    }
+
+    /** 搜索尝试过但不可用时返回原因；未尝试或可用时为空。 */
+    String knowledgeUnavailableReason() {
+        return knowledgeSearchAttempted ? knowledgeUnavailableReason : "";
     }
 
     /** 记录工具调用步骤并转发进度事件（设计文档 4.6：工具调用成功率指标）。 */
@@ -138,7 +164,20 @@ public final class AgentTools {
         try {
             return MAPPER.writeValueAsString(value);
         } catch (Exception e) {
+            log.warn("工具结果序列化失败: {}", e.getMessage());
             return "{}";
         }
+    }
+
+    private static ObjectMapper toolObjectMapper() {
+        SimpleModule timeModule = new SimpleModule();
+        timeModule.addSerializer(Instant.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(Instant value, JsonGenerator generator, SerializerProvider serializers)
+                    throws IOException {
+                generator.writeString(value.toString());
+            }
+        });
+        return new ObjectMapper().registerModule(timeModule);
     }
 }

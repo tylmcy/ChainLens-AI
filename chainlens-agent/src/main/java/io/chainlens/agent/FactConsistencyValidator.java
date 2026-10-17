@@ -123,6 +123,7 @@ public final class FactConsistencyValidator {
         addNumber(allowed, facts.receipt().effectiveGasPrice());
         addNumber(allowed, facts.receipt().blockNumber());
         addNumber(allowed, facts.block().number());
+        allowed.add(Long.toString(facts.block().timestamp()));
         addNumber(allowed, facts.block().baseFeePerGas());
         if (facts.contractCode() != null) {
             addAddress(allowed, facts.contractCode().address());
