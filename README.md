@@ -6,7 +6,43 @@
 
 ## 当前状态
 
-🚧 **开发中**。M0～M6 的工程实现与自动化验收已完成；学习验收仍需由使用者亲自完成。现有能力包括 Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、Anvil 本地演示、Agent 工具调用编排，以及 Web 演示页。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。设计与里程碑见 [设计文档.md](设计文档.md)。
+🚧 **开发中**。M0～M6 的工程实现与自动化验收已完成；M7 RAG 知识库正在验收，学习验收仍需由使用者亲自完成。现有能力包括 Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、Anvil 本地演示、Agent 工具调用编排、受控中文知识库，以及 Web 演示页。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。设计与里程碑见 [设计文档.md](设计文档.md)。
+
+## M7 RAG 知识库
+
+大白话说，RAG 是“先从项目自己的中文说明书里找最相关的三段，再让 AI 用这些段落解释风险”。它不是链上取证：交易状态、地址、金额、finding、ruleId、confidence 和 evidence 仍只能来自 JSON-RPC 与确定性规则。报告中的 `CHAIN` 来源证明当前交易事实，`KNOWLEDGE` 来源只解释概念，而且只能引用本次 `searchKnowledge` 工具实际返回过的文档片段。
+
+RAG 默认关闭，所以普通 `mvn verify`、`demo-offline` 和十分钟演示不会下载模型。关闭或故障时，`NoopKnowledgeSearch` 会明确返回不可用，交易解析和规则报告继续工作。
+
+本地启用步骤：
+
+```bash
+# 1. 启动 pgvector（也可复用已运行的 demo-offline PostgreSQL）
+docker compose --profile demo-offline up -d postgres
+
+# 2. 首次运行会下载约 95 MB 的 BGE-small-zh-v1.5 单文件 ONNX 模型
+#    以及 DJL 在 macOS arm64 上进行张量计算所需的一次性 CPU 原生库
+SPRING_PROFILES_ACTIVE=rag-local \
+SPRING_AI_MODEL_EMBEDDING=transformers \
+CHAINLENS_KNOWLEDGE_ADMIN_ENABLED=true \
+mvn -pl chainlens-app -am spring-boot:run
+
+# 3. 可选：从本机手动触发一次固定知识目录同步；端点不接受路径或 URL
+curl -X POST http://127.0.0.1:8080/api/v1/knowledge/sync
+```
+
+默认模型缓存目录是 `.cache/chainlens/onnx`，可用 `CHAINLENS_EMBEDDING_CACHE_DIR` 改到持久目录；DJL 原生库另外缓存在用户目录的 `.djl.ai`。这些缓存和模型二进制都不会提交 Git。模型与 tokenizer 地址也可分别用 `CHAINLENS_EMBEDDING_MODEL_URI`、`CHAINLENS_EMBEDDING_TOKENIZER_URI` 覆盖，包括指向已下载文件的 `file:/absolute/path/model.onnx`。管理端点默认不存在，只有显式设置 `CHAINLENS_KNOWLEDGE_ADMIN_ENABLED=true` 后才注册，并且只接受 loopback 请求。
+
+真实检索评测使用 12 条版本化中文问句，其中 10 条有目标来源、2 条无关查询：
+
+```bash
+CHAINLENS_EMBEDDING_CACHE_DIR=.cache/chainlens/onnx \
+mvn -P rag-eval -pl chainlens-evaluation -am test \
+  -Dtest=RagRetrievalEvaluationTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+结果写入 `eval/results/rag/`，当前锁定阈值 `0.50` 的本地真实结果是 10/10 定向问句 Top-3 命中，2 条无关查询均被过滤。若模型下载卡住或留下 0 字节缓存，先检查 Hugging Face 大文件访问，必要时用 `curl -L` 手动下载后通过上述 `file:` URI 覆盖，而不是先怀疑 Docker；若报 `publish.djl.ai` 错误，是首次下载 DJL `osx-aarch64` CPU 原生库未完成；若报 pgvector 表或扩展错误，确认镜像是项目固定的 `pgvector/pgvector:0.8.6-pg17-bookworm`；若搜索返回 `NOT_READY`，表示启动后的后台同步尚未完成。学习时请完成 [M7 学习验收清单](docs/M7-学习验收.md)，不要只以测试通过判断自己已经掌握。
 
 ## M6 Web 演示页
 
@@ -43,7 +79,7 @@ mvn -pl chainlens-app -am -Pweb package
 
 ## M5 Agent 编排
 
-- 设置 `SPRING_AI_MODEL_CHAT=deepseek` + `DEEPSEEK_API_KEY` 后自动启用 LLM 编排（否则走确定性降级链路）；
+- 设置 `SPRING_AI_MODEL_CHAT=deepseek` + `DEEPSEEK_API_KEY` 后自动启用 LLM 编排；项目会将后者映射到 Spring AI 的 `spring.ai.deepseek.api-key`（否则走确定性降级链路）；
 - 工具调用步骤随 `tool_steps` 字段返回，SSE 直播 `tool.started` / `tool.completed` 事件；
 - 护栏：强制取证 → 上下文装配 → 事实一致性校验 → Schema 校验+重试+降级；
 - 指标：`/actuator/metrics`（如 `chainlens.tool.calls` 成功率）。

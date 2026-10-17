@@ -8,6 +8,8 @@ spring:
       chat: ${SPRING_AI_MODEL_CHAT:none}
       embedding: ${SPRING_AI_MODEL_EMBEDDING:none}
     deepseek:
+      # 把项目统一的环境变量显式映射到 Spring AI 2.0 要求的厂商配置。
+      api-key: ${DEEPSEEK_API_KEY:}
       chat:
         options:
           # 报告生成低随机性（设计文档 4.4）；业务代码不 import 厂商类，仅参数化配置

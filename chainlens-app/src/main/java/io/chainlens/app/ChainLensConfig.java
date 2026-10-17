@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import io.chainlens.agent.AnalysisService;
 import io.chainlens.agent.DeterministicAnalysisService;
-import io.chainlens.agent.knowledge.KnowledgeSearch;
+import io.chainlens.knowledge.KnowledgeSearch;
 import io.chainlens.agent.ReportGenerator;
 import io.chainlens.agent.TemplateReportGenerator;
 import io.chainlens.api.TraceIdFilter;
@@ -110,12 +110,6 @@ public class ChainLensConfig {
     @Bean
     ReportGenerator reportGenerator() {
         return new TemplateReportGenerator();
-    }
-
-    @Bean
-    KnowledgeSearch knowledgeSearch() {
-        // M5：知识检索空实现（RAG 于 M7 接入），缺失不影响主链路
-        return new io.chainlens.agent.knowledge.NoopKnowledgeSearch();
     }
 
     @Bean

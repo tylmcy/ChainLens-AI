@@ -29,3 +29,36 @@ jobs:
           name: surefire-reports
           path: '**/target/surefire-reports/'
           retention-days: 7
+
+  # 与普通构建隔离：只在该 job 下载本地 ONNX 模型并运行真实中文检索评测。
+  rag-evaluation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Cache BGE ONNX model
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/chainlens/onnx
+            ~/.djl.ai
+          key: bge-small-zh-v1.5-xenova-onnx-v1
+      - name: Run real RAG top-3 evaluation
+        env:
+          CHAINLENS_EMBEDDING_CACHE_DIR: .cache/chainlens/onnx
+        run: >-
+          mvn -B -ntp -P rag-eval -pl chainlens-evaluation -am test
+          -Dtest=RagRetrievalEvaluationTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+      - name: Upload RAG evaluation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-evaluation
+          path: eval/results/rag/
+          retention-days: 14

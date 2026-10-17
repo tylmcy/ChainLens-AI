@@ -106,4 +106,14 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>rag-eval</id>
+      <properties>
+        <!-- 只在显式 RAG 评测批次放开联网模型测试；CI 同时用 -Dtest 精确选中评测类。 -->
+        <surefire.excludedGroups>none</surefire.excludedGroups>
+      </properties>
+    </profile>
+  </profiles>
 </project>

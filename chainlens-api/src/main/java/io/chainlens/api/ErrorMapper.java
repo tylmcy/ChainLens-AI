@@ -19,6 +19,7 @@ public final class ErrorMapper {
     public static final String CODE_INVALID_INPUT = "INVALID_INPUT";
     public static final String CODE_TRANSACTION_NOT_FOUND = "TRANSACTION_NOT_FOUND";
     public static final String CODE_ANALYSIS_NOT_FOUND = "ANALYSIS_NOT_FOUND";
+    public static final String CODE_NOT_FOUND = "NOT_FOUND";
     public static final String CODE_TOO_MANY_REQUESTS = "TOO_MANY_REQUESTS";
     public static final String CODE_RPC_UNAVAILABLE = "RPC_UNAVAILABLE";
     public static final String CODE_INTERNAL_ERROR = "INTERNAL_ERROR";

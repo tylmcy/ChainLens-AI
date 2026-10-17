@@ -17,6 +17,7 @@ FROM eclipse-temurin:21-jre-noble
 WORKDIR /app
 RUN groupadd --system chainlens && useradd --system --gid chainlens --home-dir /app chainlens
 COPY --from=build /workspace/chainlens-app/target/chainlens-app-*.jar /app/chainlens-app.jar
+COPY --from=build /workspace/docs/knowledge /app/docs/knowledge
 USER chainlens
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/chainlens-app.jar"]

@@ -171,6 +171,14 @@ class AnalysisControllerTest {
     }
 
     @Test
+    @DisplayName("未注册的 API 路径 → 404，不被全局兜底转成 500")
+    void unregisteredApiReturns404() throws Exception {
+        mockMvc.perform(post("/api/v1/knowledge/sync"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
     @DisplayName("SSE 模式：POST + Accept text/event-stream → 流式事件序列")
     void analyzeWithSseStream() throws Exception {
         var emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter();

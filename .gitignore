@@ -27,6 +27,7 @@ web/tsconfig.tsbuildinfo
 
 # ---- 密钥与本地环境 ----
 .env
+.env.save
 *.pem
 *.key
 
@@ -35,6 +36,7 @@ logs/
 *.log
 eval/results/
 data/
+.cache/chainlens/
 
 # ---- 测试产物 ----
 .surefire/

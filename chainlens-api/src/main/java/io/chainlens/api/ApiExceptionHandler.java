@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.chainlens.chain.rpc.RpcProtocolException;
 import io.chainlens.chain.rpc.RpcUnavailableException;
@@ -47,6 +48,15 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AnalysisNotFoundException.class)
     ResponseEntity<ErrorResponse> analysisNotFound(AnalysisNotFoundException e) {
         return build(HttpStatus.NOT_FOUND, ErrorMapper.map(e));
+    }
+
+    /**
+     * 未注册的 API 路径会落到静态资源处理器；必须保留 404，不能被兜底异常处理器误报为 500。
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ErrorResponse> resourceNotFound(NoResourceFoundException e) {
+        return build(HttpStatus.NOT_FOUND,
+                ErrorResponse.of(ErrorMapper.CODE_NOT_FOUND, "请求的资源不存在", false, null));
     }
 
     @ExceptionHandler(TooManyRequestsException.class)

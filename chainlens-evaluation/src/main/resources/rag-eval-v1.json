@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "cases": [
+    {"id":"q01","query":"代币给了最大额度授权有什么危险？","expectedSource":"docs/knowledge/erc20-unlimited-approval.md","expectedRuleIds":["ERC20-UNLIMITED-APPROVAL"]},
+    {"id":"q02","query":"approve 以后是不是钱已经转走了？","expectedSource":"docs/knowledge/erc20-unlimited-approval.md","expectedRuleIds":["ERC20-UNLIMITED-APPROVAL"]},
+    {"id":"q03","query":"交易 status 失败为什么还扣 gas？","expectedSource":"docs/knowledge/failed-transaction.md","expectedRuleIds":["TX-FAILED"]},
+    {"id":"q04","query":"把 token 转到全零地址意味着什么？","expectedSource":"docs/knowledge/transfer-to-zero.md","expectedRuleIds":["TRANSFER-TO-ZERO-ADDRESS"]},
+    {"id":"q05","query":"带 input 却发给没有合约代码的账户","expectedSource":"docs/knowledge/interaction-with-eoa.md","expectedRuleIds":["INTERACTION-WITH-EOA"]},
+    {"id":"q06","query":"四字节方法签名解析不出来是否一定是诈骗？","expectedSource":"docs/knowledge/unknown-selector.md","expectedRuleIds":["UNKNOWN-SELECTOR"]},
+    {"id":"q07","query":"一笔交易出现很多 Transfer 日志应该怎么看？","expectedSource":"docs/knowledge/many-token-transfers.md","expectedRuleIds":["MANY-TOKEN-TRANSFERS"]},
+    {"id":"q08","query":"地址命中风险名单就能证明它作恶吗？","expectedSource":"docs/knowledge/risk-address-hit.md","expectedRuleIds":["RISK-ADDRESS-HIT"]},
+    {"id":"q09","query":"transaction 和 receipt 有什么区别？","expectedSource":"docs/knowledge/ethereum-terms.md","expectedRuleIds":[]},
+    {"id":"q10","query":"CHAIN 来源和 KNOWLEDGE 来源各自能证明什么？","expectedSource":"docs/knowledge/security-basics.md","expectedRuleIds":[]},
+    {"id":"q11","query":"苹果电脑怎样调整屏幕亮度？","expectedSource":null,"expectedRuleIds":[]},
+    {"id":"q12","query":"今天晚饭做什么菜？","expectedSource":null,"expectedRuleIds":[]}
+  ]
+}

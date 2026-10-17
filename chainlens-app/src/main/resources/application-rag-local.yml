@@ -1,0 +1,33 @@
+spring:
+  ai:
+    model:
+      embedding: transformers
+    embedding:
+      transformer:
+        onnx:
+          # Xenova 版本提供不依赖外置 data 文件的单文件 ONNX，便于 Spring AI 缓存。
+          model-uri: ${CHAINLENS_EMBEDDING_MODEL_URI:https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/onnx/model.onnx}
+          model-output-name: last_hidden_state
+        tokenizer:
+          uri: ${CHAINLENS_EMBEDDING_TOKENIZER_URI:https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/tokenizer.json}
+          options:
+            padding: true
+        cache:
+          directory: ${CHAINLENS_EMBEDDING_CACHE_DIR:.cache/chainlens/onnx}
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        schema-name: public
+        table-name: knowledge_chunks
+        dimensions: 512
+        distance-type: COSINE_DISTANCE
+        index-type: HNSW
+
+chainlens:
+  knowledge:
+    enabled: true
+    admin-enabled: false
+    directory: docs/knowledge
+    top-k: 3
+    # rag-eval-v1 校准值：保留相关知识，同时过滤屏幕亮度、晚饭等无关查询。
+    similarity-threshold: 0.50
