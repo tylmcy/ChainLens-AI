@@ -10,6 +10,7 @@ import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * M0 技术风险探测（R2）：验证 Spring AI 2.0.0 本地 ONNX 嵌入（transformers）链路。
  *
- * <p>默认构建跳过本测试（@Tag smoke + 模型需联网下载一次，约 100~200MB，之后走本地缓存）。
+ * <p>默认构建跳过本测试（@Tag smoke + 模型需联网下载一次，约 95MB，之后走本地缓存）。
  * 运行方式：
  * <pre>
  *   mvn -pl chainlens-knowledge test -Dsurefire.excludedGroups=none -Dtest=LocalEmbeddingSmokeTest
@@ -33,10 +34,14 @@ import static org.assertj.core.api.Assertions.assertThat;
         classes = LocalEmbeddingSmokeTest.TestConfig.class,
         properties = {
                 "spring.ai.embedding.transformer.onnx.model-uri="
-                        + "${model.uri:https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/onnx/model.onnx}",
+                        + "${model.uri:${CHAINLENS_EMBEDDING_MODEL_URI:https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/onnx/model.onnx}}",
                 "spring.ai.embedding.transformer.tokenizer.uri="
-                        + "${tokenizer.uri:https://huggingface.co/BAAI/bge-small-zh-v1.5/resolve/main/tokenizer.json}",
-                "spring.ai.embedding.transformer.onnx.model-output-name=sentence_embedding"
+                        + "${tokenizer.uri:${CHAINLENS_EMBEDDING_TOKENIZER_URI:https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/tokenizer.json}}",
+                "spring.ai.embedding.transformer.onnx.model-output-name=last_hidden_state",
+                // BERT 句子批次长度不一致时必须 padding，否则 ONNX 输入会成为 ragged array。
+                "spring.ai.embedding.transformer.tokenizer.options.padding=true",
+                "spring.ai.embedding.transformer.cache.directory="
+                        + "${embedding.cache.dir:${CHAINLENS_EMBEDDING_CACHE_DIR:${java.io.tmpdir}/chainlens-onnx-cache}}"
         })
 @Tag("smoke")
 class LocalEmbeddingSmokeTest {
@@ -55,7 +60,8 @@ class LocalEmbeddingSmokeTest {
     }
 
     @Configuration
-    @EnableAutoConfiguration
+    // 这里只验证 ONNX 嵌入链路；排除 JDBC，避免知识模块的数据库依赖污染单元冒烟测试。
+    @EnableAutoConfiguration(exclude = DataSourceAutoConfiguration.class)
     static class TestConfig {
     }
 }
