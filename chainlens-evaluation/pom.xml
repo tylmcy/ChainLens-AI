@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.chainlens</groupId>
     <artifactId>chainlens-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   </parent>
   <artifactId>chainlens-evaluation</artifactId>
   <name>ChainLens Evaluation</name>

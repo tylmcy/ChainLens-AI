@@ -2,9 +2,9 @@
 
 - 数据集：`transaction-eval/v1`
 - 模式：`offline`
-- Git commit：`ab34f840ea9964a168aca68d47f8adb557139dd6`
+- Git commit：`07fed0f4988a89a0165db3034c1e7b16df3f7fb2`
 - 规则版本：`7-rules-defaults-v1`
-- 执行时间：`2026-10-19T02:35:12.301273Z`
+- 执行时间：`2026-10-19T15:49:19.616906Z`
 - 结论：**通过**
 
 | 指标 | 正确/总数 | 结果 | 门槛 |

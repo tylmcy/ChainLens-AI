@@ -3,8 +3,8 @@
   "datasetVersion" : "v1",
   "ruleVersion" : "7-rules-defaults-v1",
   "mode" : "offline",
-  "gitCommit" : "ab34f840ea9964a168aca68d47f8adb557139dd6",
-  "executedAt" : "2026-10-19T02:35:12.301273Z",
+  "gitCommit" : "07fed0f4988a89a0165db3034c1e7b16df3f7fb2",
+  "executedAt" : "2026-10-19T15:49:19.616906Z",
   "parsingAccuracy" : {
     "correct" : 585,
     "total" : 585,
@@ -18,11 +18,6 @@
     "threshold" : 1.0
   },
   "parsingByCategory" : {
-    "transfers" : {
-      "correct" : 270,
-      "total" : 270,
-      "threshold" : 0.98
-    },
     "status" : {
       "correct" : 30,
       "total" : 30,
@@ -41,6 +36,11 @@
     "approvals" : {
       "correct" : 75,
       "total" : 75,
+      "threshold" : 0.98
+    },
+    "transfers" : {
+      "correct" : 270,
+      "total" : 270,
       "threshold" : 0.98
     }
   },

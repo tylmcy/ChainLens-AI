@@ -13,11 +13,11 @@
 
   <groupId>io.chainlens</groupId>
   <artifactId>chainlens-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>pom</packaging>
   <name>ChainLens AI (Parent)</name>
   <description>Evidence-based Ethereum transaction analysis agent</description>
-  <url>https://github.com/chainlens/chainlens-ai</url>
+  <url>https://github.com/tylmcy/ChainLens-AI</url>
 
   <modules>
     <module>chainlens-model</module>

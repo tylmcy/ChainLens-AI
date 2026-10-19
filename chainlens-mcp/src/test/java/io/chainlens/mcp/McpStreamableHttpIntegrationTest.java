@@ -31,7 +31,7 @@ import io.modelcontextprotocol.spec.McpSchema;
         properties = {
                 "server.address=127.0.0.1",
                 "spring.ai.mcp.server.name=chainlens-test",
-                "spring.ai.mcp.server.version=0.1.0",
+                "spring.ai.mcp.server.version=1.0.0",
                 "spring.ai.mcp.server.protocol=STREAMABLE",
                 "spring.ai.mcp.server.type=SYNC",
                 "spring.ai.mcp.server.capabilities.tool=true",

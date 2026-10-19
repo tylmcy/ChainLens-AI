@@ -4,7 +4,7 @@ set -eu
 # 从脚本自身定位仓库，所有路径都加引号，可正常处理 macOS 含空格/中文的目录。
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-APP_JAR="$PROJECT_DIR/chainlens-app/target/chainlens-app-0.1.0-SNAPSHOT.jar"
+APP_JAR="$PROJECT_DIR/chainlens-app/target/chainlens-app-1.0.0.jar"
 
 if [ ! -f "$APP_JAR" ]; then
   echo "未找到 ChainLens 可执行 jar：$APP_JAR" >&2
