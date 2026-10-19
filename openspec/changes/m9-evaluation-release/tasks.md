@@ -66,6 +66,6 @@
 - [x] 8.1 运行 `mvn -B -ntp verify`、offline 门槛命令、RAG 评测和相关 Web 测试，记录通过数、耗时与任何环境前提；验证 M0-M8 能力无回归
 - [ ] 8.2 集中审查 30 条 ground truth、指标分母、阈值、证据位置、秘密处理、预算中止、Apple Silicon/CI 兼容性和报告排序；通过审查清单逐项给出文件或测试证据
 - [x] 8.3 对照 JSON 结果核验 README 评测数字、架构图、截图、示例报告和链接；验证没有手填不一致数字、失效路径、TODO、TBD 或范围冲突
-- [ ] 8.4 按功能拆分 Conventional Commits，并用 `git diff --check`、`git status --short` 和提交历史验证没有混入密钥、临时 full 产物或无关 M8 文件
+- [x] 8.4 按功能拆分 Conventional Commits，并用 `git diff --check`、`git status --short` 和提交历史验证没有混入密钥、临时 full 产物或无关 M8 文件
 - [ ] 8.5 完成 M9 工程验收记录，区分 offline+CI、full、发布材料和未完成学习项；通过 OpenSpec checklist 与实际证据逐项对应后再申请同步主 spec 和归档
 - [ ] 8.6 单独进行学习验收：维护者解释并独立复现一条 fixture、一次计分、一项 CI 故障和一次预算中止，再修改一条安全测试用例并排错；不得仅凭代码生成、测试通过或文档存在勾选完成

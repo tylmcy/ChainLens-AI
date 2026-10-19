@@ -63,7 +63,7 @@
 
 ## 远端 CI 前置条件
 
-- 已将用户提供的 `https://github.com/tylmcy/ChainLens-AI.git` 配置为 `origin`，只读查询确认远端当前没有分支。`gh auth status` 显示 GitHub CLI token 无效，因此还无法读取或触发 Actions run，也无法取回 artifact。
+- 已将用户提供的 `https://github.com/tylmcy/ChainLens-AI.git` 配置为 `origin`，只读查询确认远端当前没有分支。`gh auth status` 显示 GitHub CLI token 无效，因此还无法读取或触发 Actions run，也无法取回 artifact。CI 仅响应推送到 `main` 或面向 `main` 的 PR。
 - 用户的项目约束禁止代理向远程仓库 push。该约束仍生效；在真实 Actions artifact 可供检查之前，6.5 保持未完成，Full 阶段 7.x 按设计不启动。
 
 ## 本地提交记录
@@ -71,4 +71,6 @@
 - `914c967 feat(mcp): add read-only Streamable HTTP and stdio server`：归档 M8 工程文件，未混入 M9 评测实现。
 - `ab34f84 feat(evaluation): add offline transaction scoring and CI gate`：M9 数据集、离线评分、规则证据修正、离线 CI job 与 OpenSpec 计划。
 - `865071b docs(evaluation): publish offline baseline reports`：提交 README 所链接的机器报告和可读报告，并修正忽略规则。
-- 分支为 `codex/m9-evaluation-release`；三个提交均只在本地，尚未 push。
+- `92eacb2 docs(openspec): record M9 offline verification state`：记录验收状态、提交哈希及远端前置条件。
+- `git diff --check 0130953..HEAD` 通过；本地分支工作区干净，秘密扫描未命中；提交列表未混入 `.env`、模型缓存或 full 模式临时产物。M8 实现只在首个 MCP 提交，之后三笔提交针对 M9 评测与验收记录。
+- 分支为 `codex/m9-evaluation-release`；四个提交均只在本地，尚未 push。
