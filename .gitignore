@@ -34,7 +34,11 @@ web/tsconfig.tsbuildinfo
 # ---- 运行时产物 ----
 logs/
 *.log
-eval/results/
+eval/results/*
+!eval/results/offline/
+eval/results/offline/*
+!eval/results/offline/latest.json
+!eval/results/offline/latest.md
 data/
 .cache/chainlens/
 
