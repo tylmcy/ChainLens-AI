@@ -39,7 +39,7 @@ public final class EvaluationReportWriter {
         }
     }
 
-    private static void writeAtomically(Path target, byte[] bytes) throws IOException {
+    static void writeAtomically(Path target, byte[] bytes) throws IOException {
         Path temp = Files.createTempFile(target.getParent(), ".chainlens-eval-", ".tmp");
         try {
             Files.write(temp, bytes);

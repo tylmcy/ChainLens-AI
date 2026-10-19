@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -77,7 +78,10 @@ public final class AgentTools {
 
     @Tool(description = "查询地址在交易发生区块的合约代码（eth_getCode 带区块号），用于判断交互对象是否为合约。")
     public String getContractCode(String address) {
-        return timed("getContractCode", json(Map.of("address", address)), () -> {
+        return timed("getContractCode", nullableArgument("address", address), () -> {
+            if (address == null || address.isBlank()) {
+                throw new IllegalArgumentException("缺少地址参数");
+            }
             String code = rpcClient.getCode(address, facts.receipt().blockNumber()).asText();
             boolean hasCode = code != null && code.length() > 2;
             return json(Map.of(
@@ -90,22 +94,33 @@ public final class AgentTools {
 
     @Tool(description = "查询当前分析交易所在区块的上下文信息（区块号、时间戳、baseFee）。")
     public String getBlock() {
-        return timed("getBlock", "{}", () -> json(Map.of(
-                "number", facts.block().number().toString(),
-                "timestamp", Long.toString(facts.block().timestamp()),
-                "baseFeePerGas", facts.block().baseFeePerGas() == null ? null : facts.block().baseFeePerGas().toString())));
+        return timed("getBlock", "{}", () -> {
+            // 伦敦升级前的历史区块没有 baseFee；保留 JSON null 表示“不适用”。
+            Map<String, String> block = new LinkedHashMap<>();
+            block.put("number", facts.block().number().toString());
+            block.put("timestamp", Long.toString(facts.block().timestamp()));
+            block.put("baseFeePerGas", facts.block().baseFeePerGas() == null
+                    ? null : facts.block().baseFeePerGas().toString());
+            return json(block);
+        });
     }
 
     @Tool(description = "解析 calldata 的 4-byte selector，返回候选函数签名列表。注意：selector 存在碰撞，可能无法唯一确定函数。")
     public String resolveSelector(String selector) {
-        return timed("resolveSelector", json(Map.of("selector", selector)), () -> json(Map.of(
-                "selector", selector,
-                "candidates", selectorRegistry.candidates(selector))));
+        return timed("resolveSelector", nullableArgument("selector", selector), () -> {
+            if (selector == null || selector.isBlank()) {
+                throw new IllegalArgumentException("缺少 selector 参数");
+            }
+            return json(Map.of("selector", selector, "candidates", selectorRegistry.candidates(selector)));
+        });
     }
 
     @Tool(description = "检索知识库（规则解释、Ethereum 术语、安全提示）。查询应包含已命中的 ruleId 或具体风险名称，不要使用“风险分析”等泛化词。知识库只提供解释性知识，不提供链上事实。")
     public String searchKnowledge(String query) {
-        return timed("searchKnowledge", json(Map.of("query", query)), () -> {
+        return timed("searchKnowledge", nullableArgument("query", query), () -> {
+            if (query == null || query.isBlank()) {
+                throw new IllegalArgumentException("缺少检索词");
+            }
             knowledgeSearchAttempted = true;
             KnowledgeSearch.SearchResult result = knowledgeSearch.search(query);
             result.hits().forEach(hit -> returnedKnowledgeSources.add(hit.source()));
@@ -146,7 +161,8 @@ public final class AgentTools {
             ToolStepRecorder.record(toolName, arguments, startedAt, duration, false, e.getMessage());
             listener.onToolCompleted(toolName, false, duration, e.getMessage());
             log.warn("工具调用失败 {}: {}", toolName, e.getMessage());
-            return json(Map.of("error", e.getMessage()));
+            // 异常消息可能为空，也可能包含节点细节；工具结果只暴露稳定的异常类型。
+            return json(Map.of("error", e.getClass().getSimpleName()));
         } finally {
             recordMetrics(toolName, success);
         }
@@ -167,6 +183,13 @@ public final class AgentTools {
             log.warn("工具结果序列化失败: {}", e.getMessage());
             return "{}";
         }
+    }
+
+    /** 模型可能省略工具参数；序列化 null 以便失败步骤也能被追踪。 */
+    private static String nullableArgument(String name, String value) {
+        Map<String, String> arguments = new LinkedHashMap<>();
+        arguments.put(name, value);
+        return json(arguments);
     }
 
     private static ObjectMapper toolObjectMapper() {

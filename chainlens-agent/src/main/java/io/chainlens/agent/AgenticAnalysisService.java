@@ -23,6 +23,8 @@ import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.metadata.EmptyUsage;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
@@ -101,10 +103,19 @@ public final class AgenticAnalysisService implements AnalysisService {
         try {
             // ---- 阶段 A：强制取证 + 规则（确定性，与 LLM 无关） ----
             listener.onStage("forensics", "开始链上取证与解析（交易/回执/区块/代码）");
-            TxFacts facts = factsProvider.assemble(txHash);
+            TxFacts facts = factsProvider.assemble(txHash, (rpcNanos, parsingNanos) -> {
+                listener.onSegmentTiming("rpc", rpcNanos);
+                listener.onSegmentTiming("parsing", parsingNanos);
+            });
 
             listener.onStage("rules", "执行确定性风险规则");
-            List<Finding> findings = ruleEngine.evaluate(facts);
+            long rulesStarted = System.nanoTime();
+            List<Finding> findings;
+            try {
+                findings = ruleEngine.evaluate(facts);
+            } finally {
+                listener.onSegmentTiming("rules", System.nanoTime() - rulesStarted);
+            }
             listener.onRulesCompleted(findings);
 
             // ---- 阶段 B：LLM 工具调用循环 ----
@@ -122,7 +133,7 @@ public final class AgenticAnalysisService implements AnalysisService {
             Set<String> calledTools = new HashSet<>();
             String finalText = null;
             for (int round = 1; round <= MAX_TOOL_ROUNDS; round++) {
-                AssistantMessage assistant = chatModel.call(new Prompt(messages, toolOptions))
+                AssistantMessage assistant = callModel(new Prompt(messages, toolOptions), listener)
                         .getResult().getOutput();
                 messages.add(assistant);
                 if (assistant.hasToolCalls()) {
@@ -172,7 +183,7 @@ public final class AgenticAnalysisService implements AnalysisService {
                 }
             }
             for (int attempt = 1; report == null && attempt <= MAX_REPORT_ATTEMPTS; attempt++) {
-                String candidate = textAnswer(messages, toolOptions);
+                String candidate = textAnswer(messages, toolOptions, listener);
                 ReportAssembly assembly = assembleReport(candidate, facts, findings,
                         tools.returnedKnowledgeSources(), tools.knowledgeUnavailableReason());
                 if (assembly.report() != null && assembly.violations().isEmpty()) {
@@ -221,15 +232,47 @@ public final class AgenticAnalysisService implements AnalysisService {
     private static String executeTool(List<ToolCallback> callbacks, AssistantMessage.ToolCall call) {
         for (ToolCallback callback : callbacks) {
             if (callback.getToolDefinition().name().equals(call.name())) {
-                return callback.call(call.arguments());
+                try {
+                    return callback.call(call.arguments());
+                } catch (RuntimeException e) {
+                    // 只记录工具名与异常类别；模型参数可能含用户交易数据，不写入日志。
+                    Throwable cause = e.getCause();
+                    log.warn("工具回调异常 {}: {} / {}", call.name(), e.getClass().getSimpleName(),
+                            cause == null ? "无底层异常" : cause.getClass().getSimpleName());
+                    throw e;
+                }
             }
         }
         return "{\"error\":\"未知工具: " + call.name() + "\"}";
     }
 
-    private String textAnswer(List<Message> messages, ToolCallingChatOptions toolOptions) {
-        ChatResponse response = chatModel.call(new Prompt(messages, toolOptions));
+    private String textAnswer(List<Message> messages, ToolCallingChatOptions toolOptions,
+                              AnalysisProgressListener listener) {
+        ChatResponse response = callModel(new Prompt(messages, toolOptions), listener);
         return response.getResult().getOutput().getText();
+    }
+
+    /** 对每次模型往返采样，包括工具循环与报告重试；缺失 usage 不推测。 */
+    private ChatResponse callModel(Prompt prompt, AnalysisProgressListener listener) {
+        listener.beforeModelCall(prompt.getOptions() == null ? null : prompt.getOptions().getMaxTokens());
+        long started = System.nanoTime();
+        try {
+            ChatResponse response = chatModel.call(prompt);
+            Usage usage = response.getMetadata() == null ? null : response.getMetadata().getUsage();
+            // Spring AI 用 EmptyUsage 的 0/0 占位；它不代表 provider 真正返回零 token。
+            if (usage instanceof EmptyUsage) {
+                usage = null;
+            }
+            listener.onModelUsage(usage == null ? null : usage.getPromptTokens(),
+                    usage == null ? null : usage.getCompletionTokens(),
+                    usage == null ? null : usage.getTotalTokens());
+            return response;
+        } catch (RuntimeException e) {
+            listener.onModelFailure(e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            listener.onSegmentTiming("llm", System.nanoTime() - started);
+        }
     }
 
     /**

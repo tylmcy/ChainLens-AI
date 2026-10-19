@@ -51,6 +51,7 @@ public final class ErrorMapper {
         if (error instanceof RpcException rpc && !rpc.isRetryable()) {
             return ErrorResponse.of(CODE_INTERNAL_ERROR, "链上数据查询失败：" + error.getMessage(), false, details);
         }
-        return ErrorResponse.of(CODE_INTERNAL_ERROR, "内部错误：" + error.getMessage(), false, details);
+        // LLM/数据库等未知异常可能包含连接串或 Key；客户端只接收稳定错误码与 traceId。
+        return ErrorResponse.of(CODE_INTERNAL_ERROR, "内部错误，请使用 traceId 排查", false, details);
     }
 }

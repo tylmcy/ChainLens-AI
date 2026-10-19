@@ -1,0 +1,103 @@
+name: Full transaction evaluation
+
+# 付费模型评测只允许维护者显式启动；默认 push/PR 仍只跑离线门槛。
+on:
+  workflow_dispatch:
+    inputs:
+      budget_usd:
+        description: '本次模型预算上限（USD，必填）'
+        required: true
+        type: string
+      input_usd_per_million:
+        description: '输入 token 单价（USD / 百万 token）'
+        required: true
+        type: string
+      output_usd_per_million:
+        description: '输出 token 单价（USD / 百万 token）'
+        required: true
+        type: string
+      price_date:
+        description: '单价核对日期（YYYY-MM-DD）'
+        required: true
+        type: string
+      max_input_tokens:
+        description: '模型输入 token 上界（须按模型文档核对）'
+        required: true
+        type: string
+      max_output_tokens:
+        description: '每次响应的最大输出 token'
+        required: true
+        type: string
+      context_source:
+        description: '输入 token 上界的官方资料来源'
+        required: true
+        type: string
+      model:
+        description: 'DeepSeek 模型名'
+        required: true
+        default: 'deepseek-flash'
+        type: string
+      case_ids:
+        description: '可选：逗号分隔的 caseId；留空评测全部 30 条'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  full-evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p eval/results/full/latest
+          printf 'Full workflow started for commit %s\n' "$GITHUB_SHA" > eval/results/full/latest/workflow-status.txt
+      - name: Start local Anvil and PostgreSQL
+        run: docker compose --profile demo-offline up --build -d postgres anvil demo-seed
+      - name: Build Full evaluation application
+        run: mvn -B -ntp -pl chainlens-app -am package -DskipTests
+      - name: Run Full evaluation
+        env:
+          SPRING_PROFILES_ACTIVE: evaluation-full
+          SPRING_AI_MODEL_CHAT: deepseek
+          SPRING_AI_MODEL_EMBEDDING: none
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ inputs.model }}
+          CHAINLENS_EVAL_PROVIDER: deepseek
+          CHAINLENS_EVAL_MODEL: ${{ inputs.model }}
+          CHAINLENS_EVAL_PRICE_DATE: ${{ inputs.price_date }}
+          CHAINLENS_EVAL_CONTEXT_SOURCE: ${{ inputs.context_source }}
+          CHAINLENS_EVAL_MAX_INPUT_TOKENS: ${{ inputs.max_input_tokens }}
+          CHAINLENS_EVAL_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
+          CHAINLENS_EVAL_INPUT_USD_PER_MILLION: ${{ inputs.input_usd_per_million }}
+          CHAINLENS_EVAL_OUTPUT_USD_PER_MILLION: ${{ inputs.output_usd_per_million }}
+          CHAINLENS_EVAL_BUDGET_USD: ${{ inputs.budget_usd }}
+          CHAINLENS_EVAL_CASE_IDS: ${{ inputs.case_ids }}
+          CHAINLENS_EVAL_ANVIL_RPC_URL: http://127.0.0.1:8545
+          CHAINLENS_EVAL_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
+          CHAINLENS_EVAL_OUTPUT_DIR: eval/results/full/latest
+        run: >-
+          java -jar chainlens-app/target/chainlens-app-0.1.0-SNAPSHOT.jar
+          --spring.main.web-application-type=none
+          --spring.ai.mcp.server.enabled=false
+      - name: Upload Full evaluation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: transaction-full-evaluation
+          path: eval/results/full/latest/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Stop local evaluation services
+        if: always()
+        run: docker compose --profile demo-offline down --remove-orphans

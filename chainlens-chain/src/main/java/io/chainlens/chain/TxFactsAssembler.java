@@ -2,6 +2,7 @@ package io.chainlens.chain;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -60,14 +61,31 @@ public final class TxFactsAssembler implements TxFactsProvider {
 
     @Override
     public TxFacts assemble(String txHash) {
-        long chainId = client.chainId();
+        return assemble(txHash, ForensicsTimingListener.noop());
+    }
+
+    @Override
+    public TxFacts assemble(String txHash, ForensicsTimingListener timingListener) {
+        long started = System.nanoTime();
+        long[] rpcNanos = {0L};
+        try {
+            return assembleMeasured(txHash, rpcNanos);
+        } finally {
+            long total = System.nanoTime() - started;
+            timingListener.onTiming(rpcNanos[0], Math.max(0L, total - rpcNanos[0]));
+        }
+    }
+
+    /** 将所有 RPC 调用归入同一取证样本，剩余时间视为解析与装配。 */
+    private TxFacts assembleMeasured(String txHash, long[] rpcNanos) {
+        long chainId = timedRpc(client::chainId, rpcNanos);
         Network network = Network.fromChainId(chainId);
 
-        JsonNode txJson = client.getTransactionByHash(txHash);
+        JsonNode txJson = timedRpc(() -> client.getTransactionByHash(txHash), rpcNanos);
         EthTransaction transaction = transactionParser.parse(txJson);
 
-        EthReceipt receipt = receiptParser.parse(client.getTransactionReceipt(txHash));
-        EthBlock block = blockParser.parse(client.getBlockByNumber(receipt.blockNumber()));
+        EthReceipt receipt = receiptParser.parse(timedRpc(() -> client.getTransactionReceipt(txHash), rpcNanos));
+        EthBlock block = blockParser.parse(timedRpc(() -> client.getBlockByNumber(receipt.blockNumber()), rpcNanos));
 
         // gas 成本：EIP-1559（type 0x2）用 effectiveGasPrice；legacy 用 gasPrice（设计文档 5.3）
         BigInteger effectivePrice = (transaction.type() == 2 && receipt.effectiveGasPrice() != null)
@@ -84,7 +102,7 @@ public final class TxFactsAssembler implements TxFactsProvider {
 
         EventDecoder.DecodedEvents events = eventDecoder.decode(receipt.logs());
 
-        ContractCodeInfo contractCode = inspectContractCode(transaction, receipt);
+        ContractCodeInfo contractCode = inspectContractCode(transaction, receipt, rpcNanos);
 
         return new TxFacts(
                 network,
@@ -104,7 +122,17 @@ public final class TxFactsAssembler implements TxFactsProvider {
         );
     }
 
-    private ContractCodeInfo inspectContractCode(EthTransaction transaction, EthReceipt receipt) {
+    /** 即使 RPC 抛异常也记录已耗时间，使失败样本能保留真实分段耗时。 */
+    private static <T> T timedRpc(Supplier<T> call, long[] rpcNanos) {
+        long started = System.nanoTime();
+        try {
+            return call.get();
+        } finally {
+            rpcNanos[0] += System.nanoTime() - started;
+        }
+    }
+
+    private ContractCodeInfo inspectContractCode(EthTransaction transaction, EthReceipt receipt, long[] rpcNanos) {
         if (transaction.to() == null) {
             return ContractCodeInfo.unavailable(null, receipt.blockNumber(), "合约创建交易（to 为空），无需代码检查");
         }
@@ -113,7 +141,7 @@ public final class TxFactsAssembler implements TxFactsProvider {
             return ContractCodeInfo.unavailable(to, receipt.blockNumber(), "to 为零地址，无需代码检查");
         }
         try {
-            JsonNode code = client.getCode(to, receipt.blockNumber());
+            JsonNode code = timedRpc(() -> client.getCode(to, receipt.blockNumber()), rpcNanos);
             String hex = code.asText();
             boolean hasCode = hex != null && hex.length() > 2;
             BigInteger codeSize = hasCode
@@ -122,7 +150,8 @@ public final class TxFactsAssembler implements TxFactsProvider {
             return new ContractCodeInfo(to, true, hasCode, codeSize, receipt.blockNumber(), null);
         } catch (RpcException e) {
             // 历史状态不可查：如实记录，依赖代码的规则不得触发（设计文档 9.3 / 6.2）
-            return ContractCodeInfo.unavailable(to, receipt.blockNumber(), e.getMessage());
+            return ContractCodeInfo.unavailable(to, receipt.blockNumber(),
+                    "历史合约代码查询失败（" + e.getClass().getSimpleName() + "）");
         }
     }
 }

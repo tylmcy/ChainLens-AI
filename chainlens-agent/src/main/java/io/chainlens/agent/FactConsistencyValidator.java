@@ -38,7 +38,17 @@ public final class FactConsistencyValidator {
 
     /** 校验；返回违规列表（空 = 通过）。 */
     public static List<String> validate(AnalysisReport report, TxFacts facts, List<Finding> rulesFindings) {
+        return score(report, facts, rulesFindings).violations();
+    }
+
+    /**
+     * 对报告中的可机械核验 token 计数；规则集合与免责声明仍作为独立违规项。
+     * 零 token 时分母保持为零，调用方必须把它报告为数据异常，不能当作 100%。
+     */
+    public static Score score(AnalysisReport report, TxFacts facts, List<Finding> rulesFindings) {
         List<String> violations = new ArrayList<>();
+        int checkedTokens = 0;
+        int passedTokens = 0;
 
         // ① ruleId 多重集合一致
         List<String> expected = rulesFindings.stream().map(Finding::ruleId).sorted().toList();
@@ -71,8 +81,11 @@ public final class FactConsistencyValidator {
             StringBuffer cleaned = new StringBuffer();
             while (hashMatcher.find()) {
                 String token = hashMatcher.group().toLowerCase();
+                checkedTokens++;
                 if (!allowedStrings.contains(token)) {
                     violations.add("文本中出现证据之外的哈希：" + token);
+                } else {
+                    passedTokens++;
                 }
                 hashMatcher.appendReplacement(cleaned, "");
             }
@@ -81,8 +94,11 @@ public final class FactConsistencyValidator {
             Matcher numberMatcher = LONG_NUMBER.matcher(cleaned);
             while (numberMatcher.find()) {
                 String token = numberMatcher.group();
+                checkedTokens++;
                 if (!allowedStrings.contains(token)) {
                     violations.add("文本中出现证据之外的长数字：" + token);
+                } else {
+                    passedTokens++;
                 }
             }
         }
@@ -93,7 +109,17 @@ public final class FactConsistencyValidator {
             violations.add("limitations 首条必须是免责声明");
         }
 
-        return violations;
+        return new Score(checkedTokens, passedTokens, List.copyOf(violations));
+    }
+
+    /** 一份报告中可追溯 token 的检查总数、通过数和完整护栏违规。 */
+    public record Score(int checkedTokens, int passedTokens, List<String> violations) {
+        public Score {
+            if (checkedTokens < 0 || passedTokens < 0 || passedTokens > checkedTokens) {
+                throw new IllegalArgumentException("事实一致性计数无效");
+            }
+            violations = List.copyOf(violations);
+        }
     }
 
     /** 证据允许集合：所有地址/哈希/长数字的十进制原文（精确字符串匹配）。 */

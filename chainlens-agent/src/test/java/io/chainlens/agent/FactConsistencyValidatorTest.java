@@ -103,4 +103,47 @@ class FactConsistencyValidatorTest {
         assertThat(FactConsistencyValidator.validate(report, facts, rulesFindings()))
                 .anyMatch(v -> v.contains("免责声明"));
     }
+
+    @Test
+    @DisplayName("合法哈希和长数字计入事实一致性分子与分母")
+    void scoreCountsSupportedTokens() {
+        var facts = AgTxFactsFactory.create().build();
+        var report = report("交易 " + facts.transaction().hash() + " 的区块时间戳为 1700000000。",
+                rulesFindings(), List.of(DISCLAIMER));
+
+        var score = FactConsistencyValidator.score(report, facts, rulesFindings());
+
+        assertThat(score.checkedTokens()).isEqualTo(2);
+        assertThat(score.passedTokens()).isEqualTo(2);
+        assertThat(score.violations()).isEmpty();
+        assertThat(FactConsistencyValidator.validate(report, facts, rulesFindings()))
+                .isEqualTo(score.violations());
+    }
+
+    @Test
+    @DisplayName("编造的哈希或长数字留在分母且不进入分子")
+    void scoreCountsHallucinatedTokensAsFailures() {
+        var facts = AgTxFactsFactory.create().build();
+        var report = report("交易 " + facts.transaction().hash() + " 转出 99999999999999 wei。",
+                rulesFindings(), List.of(DISCLAIMER));
+
+        var score = FactConsistencyValidator.score(report, facts, rulesFindings());
+
+        assertThat(score.checkedTokens()).isEqualTo(2);
+        assertThat(score.passedTokens()).isEqualTo(1);
+        assertThat(score.violations()).anyMatch(v -> v.contains("长数字"));
+    }
+
+    @Test
+    @DisplayName("零 token 不会被计作百分之百一致")
+    void scoreLeavesZeroTokenDenominatorExplicit() {
+        var facts = AgTxFactsFactory.create().build();
+        var report = report("交易已完成。", rulesFindings(), List.of(DISCLAIMER));
+
+        var score = FactConsistencyValidator.score(report, facts, rulesFindings());
+
+        assertThat(score.checkedTokens()).isZero();
+        assertThat(score.passedTokens()).isZero();
+        assertThat(score.violations()).isEmpty();
+    }
 }

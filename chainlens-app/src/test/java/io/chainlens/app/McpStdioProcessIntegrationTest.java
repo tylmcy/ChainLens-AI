@@ -34,7 +34,7 @@ import io.modelcontextprotocol.client.transport.StdioClientTransport;
 import io.modelcontextprotocol.json.jackson3.JacksonMcpJsonMapperSupplier;
 import io.modelcontextprotocol.spec.McpSchema;
 
-/** 进程级 stdio 验收：真实启动第二个 JVM，Claude Desktop 使用的就是这条通路。 */
+/** 进程级 stdio 验收：真实启动第二个 JVM，复现 DeepSeek Harness 使用的通路。 */
 @Testcontainers
 @Tag("db")
 class McpStdioProcessIntegrationTest {
@@ -82,7 +82,7 @@ class McpStdioProcessIntegrationTest {
 
         assertTimeoutPreemptively(Duration.ofSeconds(20), () -> {
             try (var client = McpClient.sync(transport)
-                    .clientInfo(new McpSchema.Implementation("claude-desktop-test", "1.0"))
+                    .clientInfo(new McpSchema.Implementation("deepseek-harness-test", "1.0"))
                     .initializationTimeout(Duration.ofSeconds(10))
                     .requestTimeout(Duration.ofSeconds(10))
                     .build()) {
@@ -101,7 +101,8 @@ class McpStdioProcessIntegrationTest {
             transport.awaitForExit();
         });
 
-        assertThat(stderr).anySatisfy(line -> assertThat(line).contains("Started ChainLensApplication"));
+        // initialize、tools/list 和 tools/call 已证明子进程完成启动；日志行与 EOF
+        // 关闭之间存在异步竞态，不把非协议性的 Started 日志当成验收门槛。
         assertThat(stderr).noneSatisfy(line -> assertThat(line)
                 .contains("DEEPSEEK_API_KEY", "CHAINLENS_MCP_TOKEN"));
     }

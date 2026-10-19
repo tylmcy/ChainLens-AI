@@ -49,4 +49,37 @@ class AgentToolsKnowledgeTest {
         assertThat(json.path("hits").get(0).path("source").asText())
                 .isEqualTo("docs/knowledge/failed-transaction.md#含义");
     }
+
+    @Test
+    void 伦敦升级前区块没有BaseFee时仍能返回成功工具结果() throws Exception {
+        AgentTools tools = new AgentTools(
+                AgTxFactsFactory.create().build(), List.of(), null,
+                new CuratedSelectorRegistry(), query -> KnowledgeSearch.SearchResult.available(List.of()),
+                AnalysisProgressListener.noop(), null);
+
+        JsonNode block = new ObjectMapper().readTree(tools.getBlock());
+
+        assertThat(block.path("number").asText()).isEqualTo("1");
+        assertThat(block.path("timestamp").asText()).isEqualTo("1700000000");
+        assertThat(block.has("baseFeePerGas")).isTrue();
+        assertThat(block.get("baseFeePerGas").isNull()).isTrue();
+        assertThat(block.has("error")).isFalse();
+    }
+
+    @Test
+    void 模型遗漏工具参数时返回可记录错误而不中断分析() throws Exception {
+        AgentTools tools = new AgentTools(
+                AgTxFactsFactory.create().build(), List.of(), null,
+                new CuratedSelectorRegistry(), query -> {
+                    throw new AssertionError("缺少 query 时不应访问知识库");
+                }, AnalysisProgressListener.noop(), null);
+        ObjectMapper mapper = new ObjectMapper();
+
+        assertThat(mapper.readTree(tools.searchKnowledge(null)).path("error").asText())
+                .isEqualTo("IllegalArgumentException");
+        assertThat(mapper.readTree(tools.getContractCode(null)).path("error").asText())
+                .isEqualTo("IllegalArgumentException");
+        assertThat(mapper.readTree(tools.resolveSelector(null)).path("error").asText())
+                .isEqualTo("IllegalArgumentException");
+    }
 }

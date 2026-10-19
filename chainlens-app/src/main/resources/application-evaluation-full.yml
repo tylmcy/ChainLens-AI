@@ -1,0 +1,10 @@
+spring:
+  ai:
+    # Full 模式要求请求有可核对的输出上界；普通应用配置不受影响。
+    deepseek:
+      chat:
+        options:
+          max-tokens: ${CHAINLENS_EVAL_MAX_OUTPUT_TOKENS}
+    ollama:
+      chat:
+        num-predict: ${CHAINLENS_EVAL_MAX_OUTPUT_TOKENS}

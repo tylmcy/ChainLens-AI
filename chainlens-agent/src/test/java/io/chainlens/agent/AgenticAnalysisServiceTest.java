@@ -2,6 +2,7 @@ package io.chainlens.agent;
 
 import java.math.BigInteger;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.DefaultUsage;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.deepseek.DeepSeekChatOptions;
@@ -29,6 +32,7 @@ import io.chainlens.rules.RuleEngine;
 import io.chainlens.rules.rule.UnlimitedApprovalRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * AgenticAnalysisService 离线测试：脚本化 ChatModel 模拟四种流程——
@@ -71,6 +75,34 @@ class AgenticAnalysisServiceTest {
 
     private static ChatResponse text(String content) {
         return new ChatResponse(List.of(new Generation(new AssistantMessage(content))));
+    }
+
+    private static ChatResponse textWithUsage(String content, int input, int output) {
+        return new ChatResponse(List.of(new Generation(new AssistantMessage(content))),
+                ChatResponseMetadata.builder().usage(new DefaultUsage(input, output)).build());
+    }
+
+    /** 捕获一次分析的用量和耗时，不依赖特定模型实现。 */
+    private static final class RecordingTelemetry implements AnalysisProgressListener {
+        final List<List<Integer>> usages = new ArrayList<>();
+        final List<String> segments = new ArrayList<>();
+        final List<String> failures = new ArrayList<>();
+
+        @Override
+        public void onModelUsage(Integer inputTokens, Integer outputTokens, Integer totalTokens) {
+            usages.add(java.util.Arrays.asList(inputTokens, outputTokens, totalTokens));
+        }
+
+        @Override
+        public void onSegmentTiming(String segment, long durationNanos) {
+            assertThat(durationNanos).isGreaterThanOrEqualTo(0);
+            segments.add(segment);
+        }
+
+        @Override
+        public void onModelFailure(String errorType) {
+            failures.add(errorType);
+        }
     }
 
     private static ChatResponse toolCall(String name, String arguments) {
@@ -341,5 +373,41 @@ class AgenticAnalysisServiceTest {
         assertThat(result.degraded()).isFalse();
         assertThat(result.report().sources()).noneMatch(source -> "KNOWLEDGE".equals(source.type()));
         assertThat(result.report().limitations()).doesNotContain("知识增强未使用：知识库未启用");
+    }
+
+    @Test
+    @DisplayName("模型 usage 有值和缺失时均逐次上报，规则与 LLM 耗时分段保留")
+    void emitsProviderNeutralTelemetry() {
+        FakeChatModel model = new FakeChatModel(
+                textWithUsage(validReportJson(), 12, 5),
+                text(validReportJson()));
+        RecordingTelemetry telemetry = new RecordingTelemetry();
+
+        service(model, factsWithUnlimitedApproval()).analyze(TX_HASH, telemetry);
+
+        assertThat(telemetry.usages).containsExactly(List.of(12, 5, 17),
+                java.util.Arrays.asList(null, null, null));
+        assertThat(telemetry.segments).contains("rules", "llm");
+        assertThat(telemetry.segments.stream().filter("llm"::equals)).hasSize(2);
+        assertThat(telemetry.failures).isEmpty();
+    }
+
+    @Test
+    @DisplayName("模型异常仍记录 LLM 耗时与失败类别，不伪造 token")
+    void emitsFailureTimingWithoutInventedUsage() {
+        ChatModel failingModel = new ChatModel() {
+            @Override
+            public ChatResponse call(Prompt prompt) {
+                throw new IllegalStateException("模型不可用");
+            }
+        };
+        RecordingTelemetry telemetry = new RecordingTelemetry();
+
+        assertThatThrownBy(() -> service(failingModel, factsWithUnlimitedApproval())
+                .analyze(TX_HASH, telemetry)).isInstanceOf(IllegalStateException.class);
+
+        assertThat(telemetry.usages).isEmpty();
+        assertThat(telemetry.failures).containsExactly("IllegalStateException");
+        assertThat(telemetry.segments).contains("rules", "llm");
     }
 }

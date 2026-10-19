@@ -88,16 +88,29 @@ class HttpJsonRpcClientIntegrationTest {
     }
 
     @Test
-    @DisplayName("JSON-RPC error 对象（如历史状态不可查）→ 非重试 RpcException，消息保留节点原文")
+    @DisplayName("JSON-RPC error 对象（如历史状态不可查）→ 非重试 RpcException，但不回显节点原文")
     void propagatesJsonRpcError() {
-        stubRpc("eth_getCode", null, "{\"code\":-32000,\"message\":\"header not found\"}", 200);
+        stubRpc("eth_getCode", null, "{\"code\":-32000,\"message\":\"header not found SECRET_SENTINEL\"}", 200);
 
         assertThatThrownBy(() -> client.getCode("0x1234", java.math.BigInteger.ONE))
                 .isInstanceOf(RpcException.class)
                 .satisfies(e -> {
                     assertThat(((RpcException) e).isRetryable()).isFalse();
-                    assertThat(e.getMessage()).contains("header not found");
+                    assertThat(e.getMessage()).contains("code=-32000")
+                            .doesNotContain("header not found", "SECRET_SENTINEL");
                 });
+    }
+
+    @Test
+    @DisplayName("节点不可达时异常不得包含 URL 中的 RPC Key")
+    void unreachableNodeDoesNotExposeRpcKey() {
+        var guarded = new HttpJsonRpcClient(RpcConfig.defaults(
+                "http://127.0.0.1:1/?api_key=SECRET_SENTINEL"));
+
+        assertThatThrownBy(guarded::chainId)
+                .isInstanceOf(RpcUnavailableException.class)
+                .hasMessageNotContaining("SECRET_SENTINEL")
+                .hasNoCause();
     }
 
     @Test

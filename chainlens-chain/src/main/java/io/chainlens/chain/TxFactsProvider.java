@@ -8,4 +8,9 @@ import io.chainlens.model.TxFacts;
 public interface TxFactsProvider {
 
     TxFacts assemble(String txHash);
+
+    /** 可选的取证分段计时；不支持细分的实现保留原有行为。 */
+    default TxFacts assemble(String txHash, ForensicsTimingListener timingListener) {
+        return assemble(txHash);
+    }
 }

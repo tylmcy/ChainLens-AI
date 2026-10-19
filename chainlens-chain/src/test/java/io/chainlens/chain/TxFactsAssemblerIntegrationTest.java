@@ -90,7 +90,14 @@ class TxFactsAssemblerIntegrationTest {
     void assemblesCompleteTxFacts() throws IOException {
         stubFullNode();
 
-        TxFacts facts = assembler.assemble(TX_HASH);
+        long[] timing = {-1L, -1L};
+        TxFacts facts = assembler.assemble(TX_HASH, (rpcNanos, parsingNanos) -> {
+            timing[0] = rpcNanos;
+            timing[1] = parsingNanos;
+        });
+
+        assertThat(timing[0]).as("五次 JSON-RPC 调用的累计耗时").isPositive();
+        assertThat(timing[1]).as("解析与装配耗时").isGreaterThanOrEqualTo(0L);
 
         // 网络（chainId 0xaa36a7 = 11155111 Sepolia）
         assertThat(facts.network()).isEqualTo(Network.SEPOLIA);
@@ -191,7 +198,8 @@ class TxFactsAssemblerIntegrationTest {
         TxFacts facts = assembler.assemble(TX_HASH);
 
         assertThat(facts.contractCode().available()).isFalse();
-        assertThat(facts.contractCode().unavailableReason()).contains("header not found");
+        assertThat(facts.contractCode().unavailableReason()).contains("历史合约代码查询失败")
+                .doesNotContain("header not found");
         assertThat(facts.receipt().isSuccess()).isTrue();
     }
 

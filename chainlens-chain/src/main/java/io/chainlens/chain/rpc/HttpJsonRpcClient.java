@@ -131,7 +131,8 @@ public class HttpJsonRpcClient implements EthRpcClient {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new RpcUnavailableException("RPC 节点不可达: " + config.baseUrl(), e);
+            // baseUrl 可能含 API Key；异常经 REST/SSE/日志传播，不能带入 URL 或底层 cause。
+            throw new RpcUnavailableException("RPC 节点不可达，请检查节点配置与网络");
         }
 
         int status = response.statusCode();
@@ -160,7 +161,8 @@ public class HttpJsonRpcClient implements EthRpcClient {
             int code = error.path("code").asInt(Integer.MIN_VALUE);
             String message = error.path("message").asText("unknown");
             boolean retryable = code == -32005 || code == -32603 && message.contains("limit");
-            throw new RpcException("RPC 错误 [" + method + "]: code=" + code + ", " + message, retryable);
+            // Provider message 是不可信文本，可能回显请求 URL 或 token；只公开方法与错误码。
+            throw new RpcException("RPC 错误 [" + method + "]: code=" + code, retryable);
         }
         return root.get("result");
     }

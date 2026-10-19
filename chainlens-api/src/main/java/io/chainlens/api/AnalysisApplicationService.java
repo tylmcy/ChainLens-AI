@@ -75,7 +75,7 @@ public class AnalysisApplicationService {
                 AnalysisResult result = analysisService.analyze(txHash, bridge);
                 persistQuietly(result);
             } catch (Throwable e) {
-                log.warn("SSE 分析失败: {}", e.getMessage());
+                log.warn("SSE 分析失败: {}", e.getClass().getSimpleName());
                 bridge.onAnalysisFailed(e);
             } finally {
                 semaphore.release();
@@ -111,7 +111,7 @@ public class AnalysisApplicationService {
             repository.save(result);
             return withPersisted(result, true);
         } catch (RuntimeException e) {
-            log.error("分析结果落库失败（persisted=false，结果仍返回）: {}", e.getMessage());
+            log.error("分析结果落库失败（persisted=false，结果仍返回）: {}", e.getClass().getSimpleName());
             return withPersisted(result, false);
         }
     }

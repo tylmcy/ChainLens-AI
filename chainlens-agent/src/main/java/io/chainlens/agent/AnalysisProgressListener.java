@@ -39,4 +39,20 @@ public interface AnalysisProgressListener {
 
     default void onAnalysisFailed(Throwable error) {
     }
+
+    /** 单次分析的 RPC、解析、规则或 LLM 阶段耗时；同一阶段可多次上报。 */
+    default void onSegmentTiming(String segment, long durationNanos) {
+    }
+
+    /** 一次成功 ChatModel 响应的通用 token 用量；null 表示 provider 未提供该字段。 */
+    default void onModelUsage(Integer inputTokens, Integer outputTokens, Integer totalTokens) {
+    }
+
+    /** 每次真正发送模型请求前的预算准入点；抛异常表示拒绝本次调用。 */
+    default void beforeModelCall(Integer requestMaxOutputTokens) {
+    }
+
+    /** 模型调用失败时上报异常类型；失败调用的 token 用量仍视为未知。 */
+    default void onModelFailure(String errorType) {
+    }
 }
