@@ -45,7 +45,7 @@
 - 真实 RAG 评测 `RagRetrievalEvaluationTest` 通过，耗时 02:16；本次首次补全 Hugging Face 与 DJL 的 Apple Silicon 模型/原生库缓存，测试使用 Testcontainers pgvector，不使用 LLM Key。Web 的 5 份 Vitest 文件共 13 个测试通过，`tsc -b` 与 Vite 构建通过。直接执行 `pnpm test` 触发 pnpm 在线元数据检查并因当前环境无法连接 npm、非 TTY 不允许清理 node_modules 而停止；改用已安装的本地 `node_modules/.bin` 运行同一测试与构建成功，没有改动依赖锁文件。
 - 5.3 的独立照做演练、5.6 的干净 checkout 十分钟启动、6.5 的远端 GitHub Actions artifact 仍未验收；本地工作流验证不能替代远端 artifact。Full 模式按设计暂不启动。
 - 用 `jq` 对照 `latest.json`：`parsingAccuracy=585/585`、规则 TP=18、TN=192、FP=0、FN=0，与 README 和 `latest.md` 一致；README 新增的架构图、截图、示例报告及评测链接均存在。M9 发布材料扫描未发现 TODO/TBD 或明显范围冲突；`xmllint` 验证 SVG 格式正确，`git diff --check` 通过。
-- 当前 `latest.json` 的 `gitCommit` 仍指向工作区 HEAD（M7 提交），因为 M8/M9 改动尚未整理成提交。它只标识运行时基准 HEAD，不应被解释成这些未提交改动已存在于该 commit；完成分批提交后需重新生成报告并核验可复现性。
+- 离线报告已在 M9 评测代码提交 `ab34f84` 之后重新生成，`latest.json.gitCommit` 为 `ab34f840ea9964a168aca68d47f8adb557139dd6`，指向实际产生报告的代码版本。报告 JSON/Markdown 已通过单独文档提交公开到仓库；`.gitignore` 现在仅忽略临时评测产物，保留 README 链接所指的两份离线基准报告。
 - 在 Apple Silicon MacBook Air M5 上，将当前实现复制为临时干净源码快照，排除 `.git`、`.env`、构建产物、Node 模块、数据卷和模型缓存；通过 Compose 独立项目名与 `18080/18545/25432` 备用宿主端口运行 `./scripts/demo-up.sh`。Docker 镜像层已缓存，实测完整启动与演示验收为 6.676 秒；首次干净快照成功构建、启动，并通过 8 个正向风险场景。随后查询无限授权交易，确认 `ANVIL`、`ERC20-UNLIMITED-APPROVAL`、`confidence=1.0` 与 `/result/logs/0`。演示不需要宿主机 Java、Node、Foundry 或 PostgreSQL，也未提供任何 API Key。测试后只删除项目名 `chainlens-m9-clean` 新建的容器、网络和数据库卷；原来 8080/8545/5432 的三项容器仍健康。由于镜像层来自现有 Docker 缓存，本记录的 6.676 秒不是首次联网下载镜像时长。
 - README 首次入口、证据边界、M5 Compose 演示、环境变量、offline 门槛、full 当前状态、测试命令和免责声明均已核对；Maven、offline、RAG、Web 测试/构建与干净快照演练按文档命令验证。Full 尚未实现，README 明确标为未完成且没有给出不可运行命令；这不构成 full 功能验收。
 
@@ -63,5 +63,12 @@
 
 ## 远端 CI 前置条件
 
-- `git remote -v` 当前没有配置远程仓库；`gh auth status` 显示 GitHub CLI token 无效。因此当前没有可触发或读取的 GitHub Actions run，也无法取回 artifact。
+- 已将用户提供的 `https://github.com/tylmcy/ChainLens-AI.git` 配置为 `origin`，只读查询确认远端当前没有分支。`gh auth status` 显示 GitHub CLI token 无效，因此还无法读取或触发 Actions run，也无法取回 artifact。
 - 用户的项目约束禁止代理向远程仓库 push。该约束仍生效；在真实 Actions artifact 可供检查之前，6.5 保持未完成，Full 阶段 7.x 按设计不启动。
+
+## 本地提交记录
+
+- `914c967 feat(mcp): add read-only Streamable HTTP and stdio server`：归档 M8 工程文件，未混入 M9 评测实现。
+- `ab34f84 feat(evaluation): add offline transaction scoring and CI gate`：M9 数据集、离线评分、规则证据修正、离线 CI job 与 OpenSpec 计划。
+- `865071b docs(evaluation): publish offline baseline reports`：提交 README 所链接的机器报告和可读报告，并修正忽略规则。
+- 分支为 `codex/m9-evaluation-release`；三个提交均只在本地，尚未 push。
