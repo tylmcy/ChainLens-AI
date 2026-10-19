@@ -3,6 +3,8 @@ package io.chainlens.app;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Map;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -21,6 +24,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.chainlens.api.TraceIdFilter;
+import io.chainlens.mcp.ChainLensMcpTools;
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
+import io.modelcontextprotocol.spec.McpSchema;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -67,6 +74,9 @@ class FullStackAnalysisIntegrationTest {
 
     @LocalServerPort
     int port;
+
+    @Autowired
+    ChainLensMcpTools mcpTools;
 
     /** Boot 4 移除了 TestRestTemplate，改用 RestTestClient（MockMvc 风格的真实 HTTP 客户端）。 */
     private RestTestClient client() {
@@ -185,5 +195,70 @@ class FullStackAnalysisIntegrationTest {
                 .returnResult().getResponseBody();
 
         assertThat(apiDocs).contains("/api/v1/analyses", "Ethereum 交易分析");
+    }
+
+    @Test
+    @DisplayName("MCP 全链路：五个工具复用同一 RPC fixture，且 REST/SSE 继续可用")
+    void mcpToolsUseExistingBusinessServicesAndCoexistWithRestAndSse() throws Exception {
+        stubFullNode();
+
+        var transport = HttpClientStreamableHttpTransport
+                .builder("http://127.0.0.1:" + port)
+                .endpoint("/mcp")
+                .build();
+        try (var mcp = McpClient.sync(transport)
+                .clientInfo(new McpSchema.Implementation("chainlens-full-stack-test", "1.0"))
+                .initializationTimeout(Duration.ofSeconds(5))
+                .requestTimeout(Duration.ofSeconds(15))
+                .build()) {
+            mcp.initialize();
+            assertThat(mcp.listTools().tools()).extracting(McpSchema.Tool::name).containsExactly(
+                    "analyzeTransaction", "getCaseFacts", "getRiskFindings",
+                    "resolveSelector", "searchKnowledge");
+
+            McpSchema.CallToolResult analysis = call(mcp, "analyzeTransaction", "txHash", TX_HASH);
+            McpSchema.CallToolResult facts = call(mcp, "getCaseFacts", "txHash", TX_HASH);
+            McpSchema.CallToolResult findings = call(mcp, "getRiskFindings", "txHash", TX_HASH);
+            McpSchema.CallToolResult selector = call(mcp, "resolveSelector", "selector", "0x095ea7b3");
+            McpSchema.CallToolResult knowledge = call(mcp, "searchKnowledge", "query", "ERC20-UNLIMITED-APPROVAL");
+
+            assertThat(analysis.isError()).isNotEqualTo(true);
+            assertThat(analysis.structuredContent().toString())
+                    .contains(TX_HASH, "ERC20-UNLIMITED-APPROVAL", "persisted=false");
+            assertThat(facts.structuredContent().toString())
+                    .contains(TX_HASH, mcpTools.getCaseFacts(TX_HASH).network().name());
+            assertThat(findings.structuredContent().toString())
+                    .contains("ERC20-UNLIMITED-APPROVAL", "confidence=1.0");
+            assertThat(selector.structuredContent().toString())
+                    .contains("approve(address,uint256)");
+            assertThat(knowledge.isError()).isNotEqualTo(true);
+            assertThat(knowledge.structuredContent().toString()).contains("status=");
+        }
+
+        // 同一应用进程中 REST 仍可返回 JSON，业务 SSE 仍是 text/event-stream，不与 MCP 传输混淆。
+        client().post().uri("/api/v1/analyses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"txHash\":\"" + TX_HASH + "\"}")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON);
+        String sse = client().post().uri("/api/v1/analyses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .body("{\"txHash\":\"" + TX_HASH + "\"}")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+                .expectBody(String.class)
+                .returnResult().getResponseBody();
+        assertThat(sse).contains("analysis.completed");
+    }
+
+    private static McpSchema.CallToolResult call(io.modelcontextprotocol.client.McpSyncClient client,
+                                                   String tool, String parameter, String value) {
+        McpSchema.CallToolResult result = client.callTool(
+                new McpSchema.CallToolRequest(tool, Map.of(parameter, value)));
+        assertThat(result.isError()).isNotEqualTo(true);
+        return result;
     }
 }

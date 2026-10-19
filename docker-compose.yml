@@ -71,6 +71,8 @@ services:
       SPRING_PROFILES_ACTIVE: demo-offline
       SPRING_AI_MODEL_CHAT: none
       SPRING_AI_MODEL_EMBEDDING: none
+      SERVER_ADDRESS: 0.0.0.0
+      CHAINLENS_MCP_TOKEN: ${CHAINLENS_MCP_TOKEN:-}
       ETH_RPC_URL: http://anvil:8545
       ETH_CHAIN_ID: 31337
       POSTGRES_HOST: postgres
@@ -80,6 +82,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chainlens}
     ports:
       - "${CHAINLENS_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/actuator/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy

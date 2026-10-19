@@ -1,0 +1,23 @@
+spring:
+  main:
+    # stdio 由 Claude Desktop 启动本地子进程，不需要占用 HTTP 端口。
+    web-application-type: none
+    banner-mode: "off"
+  ai:
+    mcp:
+      server:
+        stdio: true
+        type: SYNC
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+chainlens:
+  mcp:
+    transport: stdio
+
+# stdout 是 MCP 协议专用通道；包括 Spring 启动日志在内的所有日志只能去 stderr。
+logging:
+  config: classpath:logback-mcp-stdio.xml

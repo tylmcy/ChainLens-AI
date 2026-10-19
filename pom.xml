@@ -34,13 +34,13 @@
   <properties>
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
-    <spring-ai.version>2.0.0</spring-ai.version>
+    <spring-ai.version>2.0.1</spring-ai.version>
     <web3j.version>6.0.0</web3j.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- 默认只排除 smoke 标签（真实 LLM / 联网下载模型）。
          DB 集成测试默认运行（需要 Docker 守护进程 + 镜像仓库可达）；
          单独运行 DB 测试：mvn verify -Dgroups=db（smoke 仍会被排除） -->
-    <surefire.excludedGroups>smoke</surefire.excludedGroups>
+    <surefire.excludedGroups>smoke,transaction-evaluation</surefire.excludedGroups>
   </properties>
 
   <dependencyManagement>

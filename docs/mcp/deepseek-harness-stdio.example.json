@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "chainlens": {
+      "command": "/ABSOLUTE/PATH/TO/ChainLens AI/scripts/start-mcp-stdio.sh",
+      "args": []
+    }
+  }
+}
