@@ -6,7 +6,130 @@
 
 ## 当前状态
 
-🚧 **开发中**。M0～M6 的工程实现与自动化验收已完成；M7 RAG 知识库正在验收，学习验收仍需由使用者亲自完成。现有能力包括 Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、Anvil 本地演示、Agent 工具调用编排、受控中文知识库，以及 Web 演示页。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。设计与里程碑见 [设计文档.md](设计文档.md)。
+🚧 **开发中**。M0～M8 的工程能力已具备；M9 正在补齐交易评测与发布验收。现有能力包括 Ethereum JSON-RPC 取证与解析、7 条确定性风险规则、REST/SSE、中文降级报告、PostgreSQL 历史记录、OpenAPI、Anvil 本地演示、Agent 工具调用编排、受控中文知识库、Web 演示页和 MCP 五个只读工具。无 LLM Key 时返回 `llmUsed:false`、`degraded:true`，确定性链路仍可工作。设计与里程碑见 [设计文档.md](设计文档.md)。
+
+![ChainLens 在线分析和离线评测架构](docs/architecture.svg)
+
+[架构图源文件](docs/architecture.mmd)：在线取证走 Ethereum JSON-RPC 或本地 Anvil；离线评测回放冻结的 RPC 响应，复用同一套解析和规则代码，不请求外部节点。
+
+## 快速开始
+
+在 Apple Silicon Mac 上安装并启动 Docker Desktop，然后在仓库根目录运行：
+
+```bash
+./scripts/demo-up.sh
+```
+
+脚本使用 Compose 启动 PostgreSQL、Anvil 和应用，生成虚拟资产交易，并检查七条核心规则。成功后打开 <http://localhost:8080/>，从 `data/anvil-demo/transactions.json` 复制一个 `txHash` 到页面；[十分钟演示详解](#m410-分钟本地演示)包含命令行分析、换端口和停止方法。演示不用真实私钥、外部 RPC 或 LLM Key；没有模型 Key 时页面会明确标出“确定性降级报告”。
+
+需要调整配置时，先参考 [`.env.example`](.env.example)：`ETH_RPC_URL` 只在不用本地 Anvil 时指定外部只读 RPC；`POSTGRES_*` 配置历史数据库；`DEEPSEEK_API_KEY` 只用于可选模型编排；`CHAINLENS_MCP_TOKEN` 为可选本地 MCP 访问令牌。密钥只放本机环境变量，不要提交到 Git。若 Docker 未启动或端口冲突，先看 `docker compose --profile demo-offline ps`，再按[本地演示排错](#m410-分钟本地演示)检查。
+
+## M9 离线交易评测（当前可复现）
+
+固定数据集包含 15 条可复现 Anvil 交易和 15 条公开主网历史交易。后者已冻结原始 JSON-RPC 响应，因此评测时**不需要联网、Docker、数据库或模型 Key**；它比较的是生产解析器和七条确定性规则，不让模型给自己打分。每条结论的 `ruleId`、`confidence`、证据方法及 JSON Pointer 都参与校验。
+
+```bash
+# 需要 Java 21+ 与 Maven 3.9+；不需要启动应用
+mvn -B -ntp -P transaction-eval -pl chainlens-evaluation -am test \
+  -Dtest=TransactionOfflineEvaluationGateTest \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+当前固定样本的机器结果是解析 **585/585**、规则 **210/210**（TP=18、TN=192、FP=0、FN=0）；门槛分别为 ≥98% 和 100%。这仅说明当前 30 条样本通过，**不等于对所有链上交易都达到 100% 准确率**。完整数字以 [JSON 报告](eval/results/offline/latest.json) 和 [可读报告](eval/results/offline/latest.md) 为准；[数据集清单](eval/cases/transaction-eval-v1.json) 列出来源和 ground truth。默认 `mvn verify` 不重复跑这项门槛，GitHub Actions 使用独立 `transaction-offline-evaluation` job。故意改坏临时副本的排错方法见 [M9 验证记录](openspec/changes/m9-evaluation-release/verification.md)。Full 模型评测与远端 CI artifact 验收尚未完成，不能据此宣称 M9 整体结束。
+
+一笔本地无限授权交易的实际 API 输出解读见 [M9 Anvil 示例报告](docs/M9-Anvil-示例报告.md)。
+
+![Anvil 无限授权交易的风险规则与原始证据定位](docs/screenshots/m9-anvil-evidence.png)
+
+## M8 MCP Server
+
+MCP 可以理解为“AI 客户端调用 ChainLens 的标准插座”。ChainLens 对外只暴露五个只读工具，不能读私钥、签名、广播交易或写链：
+
+| 工具 | 用途 | 主要边界 |
+|---|---|---|
+| `analyzeTransaction` | 返回完整中文报告 | 事实来自 RPC，finding 来自规则，MCP 不写历史 |
+| `getCaseFacts` | 查 transaction、receipt、block、事件和 calldata | 不调用 LLM 生成事实 |
+| `getRiskFindings` | 重新取证并执行风险规则 | 不允许 LLM/RAG 新增 finding |
+| `resolveSelector` | 查询 4-byte selector 候选签名 | 碰撞时返回全部候选，不武断唯一解 |
+| `searchKnowledge` | 检索受控中文知识库 | 只能解释概念，不能证明当前交易事实 |
+
+五个工具的最小输入示例：
+
+```text
+analyzeTransaction {"txHash":"0x<64 位十六进制>"}
+getCaseFacts      {"txHash":"0x<64 位十六进制>"}
+getRiskFindings   {"txHash":"0x<64 位十六进制>"}
+resolveSelector   {"selector":"0x095ea7b3"}
+searchKnowledge   {"query":"ERC20-UNLIMITED-APPROVAL"}
+```
+
+### Streamable HTTP（主传输）
+
+先启动本地 Anvil、PostgreSQL 和应用：
+
+```bash
+./scripts/demo-up.sh
+```
+
+MCP 端点是 `http://127.0.0.1:8080/mcp`。它和 `POST /api/v1/analyses` 的业务 SSE 不是一回事：前者传输 MCP JSON-RPC 的 initialize、tools/list 和 tools/call，后者只是页面展示分析进度的事件流。
+
+用官方 MCP Inspector CLI 列出工具（首次需下载 npm 包）：
+
+```bash
+npx --yes @modelcontextprotocol/inspector@2.5.0 --cli \
+  --transport http \
+  --server-url http://127.0.0.1:8080/mcp \
+  --method tools/list
+```
+
+首次运行 Inspector 2.5.0 会下载它的 Web/CLI 依赖，在 Apple Silicon 上可能数分钟没有明显输出；只要 npm 仍在下载，就不是 ChainLens `/mcp` 故障。下面命令是一个不需要交易哈希的固定调用：
+
+```bash
+npx --yes @modelcontextprotocol/inspector@2.5.0 --cli \
+  --transport http \
+  --server-url http://127.0.0.1:8080/mcp \
+  --method tools/call \
+  --tool-name resolveSelector \
+  --tool-arg selector=0x095ea7b3
+```
+
+图形 Inspector：
+
+```bash
+npx --yes @modelcontextprotocol/inspector@2.5.0 --web \
+  --transport http \
+  --server-url http://127.0.0.1:8080/mcp
+```
+
+Cursor 项目级配置见 [`docs/mcp/cursor-http.example.json`](docs/mcp/cursor-http.example.json)：把内容复制到 `.cursor/mcp.json`，再在 Cursor 的 MCP 工具页确认 `chainlens` 连接成功。仓库不直接提交 `.cursor/mcp.json`，避免未来误放真实 Token。
+
+### DeepSeek Harness（本地 stdio）
+
+先构建 jar，运行时需要本机 `127.0.0.1:5432` 的 PostgreSQL 和 `127.0.0.1:8545` 的 Anvil/RPC：
+
+```bash
+docker compose --profile demo-offline up -d postgres anvil demo-seed
+mvn -B -pl chainlens-app -am package -DskipTests
+```
+
+把 [`docs/mcp/deepseek-harness-stdio.example.json`](docs/mcp/deepseek-harness-stdio.example.json) 中的占位绝对路径改成你本机的 `scripts/start-mcp-stdio.sh`，再将该 server 配置合并到 DeepSeek Harness 的本地 MCP 配置。DeepSeek Harness 是 M8 的本地 stdio 验收客户端；stdio 不占用 8080 端口，日志走 stderr，stdout 只保留给 MCP 协议。当前里程碑不做客户端打包，也不建立公网 Connector。
+
+### 可选 Token 与排错
+
+HTTP MCP 默认只监听 `127.0.0.1`。可以设置 `CHAINLENS_MCP_TOKEN`，客户端则发送 `Authorization: Bearer <token>`；它只是本机/受信网络的轻量保护，不是 OAuth 或公网部署方案。Docker 容器内显式使用 `0.0.0.0`，是为了让宿主端口映射可达，不代表已授权暴露公网。
+
+- `401` / `UNAUTHORIZED`：已启用 Token，但客户端没有发送正确 Bearer Token。
+- `INVALID_INPUT`：`txHash` 必须是 `0x` + 64 位十六进制，selector 必须是 `0x` + 8 位。
+- `TRANSACTION_NOT_FOUND`：当前 RPC 找不到该交易；先确认网络和交易哈希是否匹配。
+- `RPC_UNAVAILABLE`：检查 Anvil/RPC 地址、容器健康状态和网络。
+- `TOO_MANY_REQUESTS`：并发分析达上限，稍后重试；REST、业务 SSE 和 MCP 共用该上限。
+- `KNOWLEDGE_UNAVAILABLE`：RAG 关闭、未就绪或故障；确定性交易分析仍可用。
+
+固定 Anvil 操作、调用示例和脱敏输出见 [M8 MCP 演示](docs/M8-MCP-演示.md)；学习时请完成 [M8 学习验收清单](docs/M8-学习验收.md)。
+
+![MCP Inspector 发现五个只读工具](docs/screenshots/m8-inspector-tools.png)
+
+![MCP Inspector 分析 Anvil 无限授权交易](docs/screenshots/m8-inspector-analysis.png)
 
 ## M7 RAG 知识库
 
@@ -113,7 +236,7 @@ mvn verify -Dgroups=db
 ./scripts/demo-up.sh
 ```
 
-脚本会完成四件事：启动 PostgreSQL 17 + pgvector、启动内存中的 Anvil 本地链、生成覆盖 7 条规则的测试交易、启动 ChainLens 并逐条验收。成功时会看到：
+脚本会完成四件事：启动 PostgreSQL 17 + pgvector、启动内存中的 Anvil 本地链、生成 15 笔覆盖 7 条规则及边界值的测试交易、启动 ChainLens 并验收 7 条核心规则。成功时会看到：
 
 ```text
 M4 演示验收通过：7 条规则均由真实 Anvil 交易触发。
@@ -134,7 +257,7 @@ docker compose --profile demo-offline up --build -d
 
 ### 看懂演示数据
 
-启动后，`data/anvil-demo/transactions.json` 会列出 7 个场景的交易哈希和预期规则。这个文件是运行时生成的，所以不会提交到 Git。任选一个哈希请求 API：
+启动后，`data/anvil-demo/transactions.json` 会列出 15 个场景的交易哈希和预期规则；若本机文件未生成，可先看评测集中的固定 Anvil 样本。任选一个哈希请求 API：
 
 ```bash
 TX_HASH=$(sed -n 's/.*"txHash":"\([^"]*\)".*/\1/p' data/anvil-demo/transactions.json | head -1)

@@ -68,6 +68,17 @@ class CalldataDecoderTest {
     }
 
     @Test
+    @DisplayName("精选表中的真实 burn selector 碰撞不能被误报为唯一解析")
+    void curatedBurnCollisionIsAmbiguous() {
+        CalldataAnalysis analysis = decoder.decode("0x42966c68" + "0".repeat(64));
+
+        assertThat(analysis.status()).isEqualTo(Status.AMBIGUOUS);
+        assertThat(analysis.candidates()).containsExactly(
+                "burn(uint256)", "collate_propagate_storage(bytes16)");
+        assertThat(analysis.resolvedSignature()).isNull();
+    }
+
+    @Test
     @DisplayName("不足 4 字节的输入 → UNRESOLVED")
     void tooShortInput() {
         CalldataAnalysis analysis = decoder.decode("0x1234");

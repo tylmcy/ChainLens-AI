@@ -1,0 +1,1243 @@
+{
+  "suiteId": "transaction-eval",
+  "version": "v1",
+  "cases": [
+    {
+      "caseId": "anvil-unlimited-approval",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x924318416f8abc744d48948137ed7aee65715388a95198ff46834a4fd1a7c1e3",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/unlimited-approval",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-unlimited-approval",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "21160941435233",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-21160941435233",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0x095ea7b3",
+          "resolvedSignature": "approve(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          }
+        ],
+        "expectedFindings": [
+          {
+            "ruleId": "ERC20-UNLIMITED-APPROVAL",
+            "severity": "HIGH",
+            "confidence": 1,
+            "rpcMethod": "eth_getTransactionReceipt",
+            "jsonPointer": "/result/logs/0",
+            "logIndex": "0"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-failed-transaction",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0xedc8ef5ce6afd0e0ab884cb66e3f649e6eaaf555e172d2219be327f6bde81f17",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/failed-transaction",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-failed-transaction",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "FAILED",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "13189734508400",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-13189734508400",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0x40c10f19",
+          "resolvedSignature": "mint(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "TX-FAILED",
+            "severity": "MEDIUM",
+            "confidence": 1,
+            "rpcMethod": "eth_getTransactionReceipt",
+            "jsonPointer": "/result/status",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-transfer-to-zero",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0xc83e43a1625a823e23f08bd16c148f9742ae6a121ec0cdefa6969d5d78163538",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/transfer-to-zero",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-transfer-to-zero",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "17853193857120",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-17853193857120",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "AMBIGUOUS",
+          "selector": "0x42966c68",
+          "resolvedSignature": null,
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000000"
+          }
+        ],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "TRANSFER-TO-ZERO-ADDRESS",
+            "severity": "MEDIUM",
+            "confidence": 1,
+            "rpcMethod": "eth_getTransactionReceipt",
+            "jsonPointer": "/result/logs/0",
+            "logIndex": "0"
+          },
+          {
+            "ruleId": "UNKNOWN-SELECTOR",
+            "severity": "LOW",
+            "confidence": 0.8,
+            "rpcMethod": "eth_getTransactionByHash",
+            "jsonPointer": "/result/input",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-interaction-with-eoa",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x63b56ec428391bf352aa988033ae6519c8dafd4b9101b33a74af493482bda133",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/interaction-with-eoa",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-interaction-with-eoa",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "11543483088300",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-11543483088300",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0xa9059cbb",
+          "resolvedSignature": "transfer(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "INTERACTION-WITH-EOA",
+            "severity": "LOW",
+            "confidence": 0.95,
+            "rpcMethod": "eth_getCode",
+            "jsonPointer": "/result",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-unknown-selector",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x4ae1d196cb853e06e02db8a35ee88b6c0ba6ddf59d52f469b5dfd955a468ee4b",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/unknown-selector",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-unknown-selector",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "9550051817215",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-9550051817215",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "UNRESOLVED",
+          "selector": "0xdeadbeef",
+          "resolvedSignature": null,
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "UNKNOWN-SELECTOR",
+            "severity": "LOW",
+            "confidence": 0.8,
+            "rpcMethod": "eth_getTransactionByHash",
+            "jsonPointer": "/result/input",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-many-token-transfers",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x2c80d2c38f25d9ea65e1229aacb60f0050ce6c7bf0bd7f284e33cd7226226ef2",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/many-token-transfers",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-many-token-transfers",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "42708170049216",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-42708170049216",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0xa9059cbb",
+          "resolvedSignature": "transfer(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000100"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "1",
+            "rawJsonRef": "/result/logs/1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000101"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "2",
+            "rawJsonRef": "/result/logs/2",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000102"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "3",
+            "rawJsonRef": "/result/logs/3",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000103"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "4",
+            "rawJsonRef": "/result/logs/4",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000104"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "5",
+            "rawJsonRef": "/result/logs/5",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000105"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "6",
+            "rawJsonRef": "/result/logs/6",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000106"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "7",
+            "rawJsonRef": "/result/logs/7",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000107"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "8",
+            "rawJsonRef": "/result/logs/8",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000108"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "9",
+            "rawJsonRef": "/result/logs/9",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000109"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "10",
+            "rawJsonRef": "/result/logs/10",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010a"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "11",
+            "rawJsonRef": "/result/logs/11",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010b"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "12",
+            "rawJsonRef": "/result/logs/12",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010c"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "13",
+            "rawJsonRef": "/result/logs/13",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010d"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "14",
+            "rawJsonRef": "/result/logs/14",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010e"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "15",
+            "rawJsonRef": "/result/logs/15",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x000000000000000000000000000000000000010f"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "16",
+            "rawJsonRef": "/result/logs/16",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000110"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "17",
+            "rawJsonRef": "/result/logs/17",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000111"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "18",
+            "rawJsonRef": "/result/logs/18",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000112"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "19",
+            "rawJsonRef": "/result/logs/19",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000113"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "20",
+            "rawJsonRef": "/result/logs/20",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x0000000000000000000000000000000000000114"
+          }
+        ],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "MANY-TOKEN-TRANSFERS",
+            "severity": "MEDIUM",
+            "confidence": 0.8,
+            "rpcMethod": "eth_getTransactionReceipt",
+            "jsonPointer": "/result/logs",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-risk-address-hit",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x913d5e75103aea6a9c664520444bf391541671ff888cfec93ae061c0752db8f1",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/risk-address-hit",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-risk-address-hit",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "1",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "8277962469000",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-8277962469001",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "1",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "UNRESOLVED",
+          "selector": null,
+          "resolvedSignature": null,
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "RISK-ADDRESS-HIT",
+            "severity": "HIGH",
+            "confidence": 0.85,
+            "rpcMethod": "eth_getTransactionByHash",
+            "jsonPointer": "/result/to",
+            "logIndex": null
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "anvil-finite-approval",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x91c608e694505a132fc47f44da755abfe478724527fab69bc1ff023b3a13aae8",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/finite-approval",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-finite-approval",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "8197166891207",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-8197166891207",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0x095ea7b3",
+          "resolvedSignature": "approve(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          }
+        ],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-zero-approval",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0xd5d04a05911ad55b69d33bf4ce562bf26082cbaceb77868775e9439efabef640",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/zero-approval",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-zero-approval",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "7170520988114",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-7170520988114",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0x095ea7b3",
+          "resolvedSignature": "approve(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "0",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          }
+        ],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-max-minus-one-approval",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0xfae0f3b7b9a90fef44e0215ae4a07fb561ee8f8f96022f466c7adcc38535dc82",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/max-minus-one-approval",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-max-minus-one-approval",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "6377096211744",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-6377096211744",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0x095ea7b3",
+          "resolvedSignature": "approve(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "115792089237316195423570985008687907853269984665640564039457584007913129639934",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "owner": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "spender": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          }
+        ],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-no-transfer",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x5763481205cde29238133e6925ba623216e28ef06da1277c5271e0efc6ef116f",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/no-transfer",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-no-transfer",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "5180450576000",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-5180450576000",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0xa9059cbb",
+          "resolvedSignature": "transfer(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-single-transfer",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0xfa6e0d3e92950f630b8bdf8ae758e6e10b552a6a6af7394e515238823a6920f3",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/single-transfer",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-single-transfer",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "4860947000352",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-4860947000352",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0xa9059cbb",
+          "resolvedSignature": "transfer(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          }
+        ],
+        "approvals": [],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-twenty-transfers",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x036197614225465146cee9e91daad0838c965c15ae1ada3c6132a66f93c57faf",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/twenty-transfers",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-twenty-transfers",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "10952133693090",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-10952133693090",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "RESOLVED",
+          "selector": "0xa9059cbb",
+          "resolvedSignature": "transfer(address,uint256)",
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "0",
+            "rawJsonRef": "/result/logs/0",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "1",
+            "rawJsonRef": "/result/logs/1",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c9"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "2",
+            "rawJsonRef": "/result/logs/2",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79ca"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "3",
+            "rawJsonRef": "/result/logs/3",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79cb"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "4",
+            "rawJsonRef": "/result/logs/4",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79cc"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "5",
+            "rawJsonRef": "/result/logs/5",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79cd"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "6",
+            "rawJsonRef": "/result/logs/6",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79ce"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "7",
+            "rawJsonRef": "/result/logs/7",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79cf"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "8",
+            "rawJsonRef": "/result/logs/8",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d0"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "9",
+            "rawJsonRef": "/result/logs/9",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d1"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "10",
+            "rawJsonRef": "/result/logs/10",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d2"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "11",
+            "rawJsonRef": "/result/logs/11",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d3"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "12",
+            "rawJsonRef": "/result/logs/12",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d4"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "13",
+            "rawJsonRef": "/result/logs/13",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d5"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "14",
+            "rawJsonRef": "/result/logs/14",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d6"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "15",
+            "rawJsonRef": "/result/logs/15",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d7"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "16",
+            "rawJsonRef": "/result/logs/16",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d8"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "17",
+            "rawJsonRef": "/result/logs/17",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79d9"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "18",
+            "rawJsonRef": "/result/logs/18",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79da"
+          },
+          {
+            "tokenAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+            "valueWei": "1",
+            "logIndex": "19",
+            "rawJsonRef": "/result/logs/19",
+            "from": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+            "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79db"
+          }
+        ],
+        "approvals": [],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-plain-eth",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x2bcf2a3505920d1427d039b3b6393db96c162eafdfac0b5890bc07db0f7816c3",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/plain-eth",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-plain-eth",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "1",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "3256946175000",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-3256946175001",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "1",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "UNRESOLVED",
+          "selector": null,
+          "resolvedSignature": null,
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": []
+      }
+    },
+    {
+      "caseId": "anvil-unknown-eoa",
+      "sourceType": "ANVIL",
+      "network": "anvil-local",
+      "chainId": 31337,
+      "txHash": "0x5347b2e430429e41c66cf8360c2a50798c0ce8ae8c8d5f839d6cb3ab1e44053d",
+      "source": {
+        "label": "ChainLens Anvil deterministic seed",
+        "uri": "anvil://seed/unknown-eoa",
+        "capturedAt": "2026-10-18",
+        "license": "Apache-2.0"
+      },
+      "fixtureDir": "anvil-unknown-eoa",
+      "groundTruth": {
+        "status": {
+          "applicable": true,
+          "value": "SUCCESS",
+          "rawJsonRef": "/result/status"
+        },
+        "valueWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "gasCostWei": {
+          "applicable": true,
+          "value": "2872115189120",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "fromNetWei": {
+          "applicable": true,
+          "value": "-2872115189120",
+          "rawJsonRef": "/result/gasUsed"
+        },
+        "toNetWei": {
+          "applicable": true,
+          "value": "0",
+          "rawJsonRef": "/result/value"
+        },
+        "calldata": {
+          "applicable": true,
+          "status": "UNRESOLVED",
+          "selector": "0xdeadbeef",
+          "resolvedSignature": null,
+          "rawJsonRef": "/result/input"
+        },
+        "transfers": [],
+        "approvals": [],
+        "expectedFindings": [
+          {
+            "ruleId": "UNKNOWN-SELECTOR",
+            "severity": "LOW",
+            "confidence": 0.8,
+            "rpcMethod": "eth_getTransactionByHash",
+            "jsonPointer": "/result/input",
+            "logIndex": null
+          },
+          {
+            "ruleId": "INTERACTION-WITH-EOA",
+            "severity": "LOW",
+            "confidence": 0.95,
+            "rpcMethod": "eth_getCode",
+            "jsonPointer": "/result",
+            "logIndex": null
+          }
+        ]
+      }
+    }
+  ]
+}

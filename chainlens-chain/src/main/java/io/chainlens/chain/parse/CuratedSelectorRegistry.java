@@ -26,7 +26,8 @@ public final class CuratedSelectorRegistry implements SelectorRegistry {
             entry("0xb88d4fde", "safeTransferFrom(address,address,uint256,bytes)"),
             entry("0x39509351", "increaseAllowance(address,uint256)"),
             entry("0xa457c2cd", "decreaseAllowance(address,uint256)"),
-            entry("0x42966c68", "burn(uint256)"),
+            // 两个函数的 keccak256 前 4 字节相同；没有可信 ABI 时不可选定 burn。
+            Map.entry("0x42966c68", List.of("burn(uint256)", "collate_propagate_storage(bytes16)")),
             entry("0x40c10f19", "mint(address,uint256)"),
             entry("0xf2fde38b", "transferOwnership(address)")
     );

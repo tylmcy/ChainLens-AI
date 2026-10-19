@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660" role="img" aria-labelledby="title description">
+  <title id="title">ChainLens AI V1 架构与离线评测旁路</title>
+  <desc id="description">用户通过 Web 和 REST/SSE 输入交易哈希；链上事实来自 Ethereum JSON-RPC，经解析与七条确定性规则后交由 Agent 组织报告。冻结 RPC 数据经过同一解析和规则代码进入离线评测与 CI 门槛。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#64748b"/></marker>
+    <style>
+      text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC",sans-serif;fill:#12243a}
+      .heading{font-size:30px;font-weight:700}.sub{font-size:16px;fill:#42566e}
+      .label{font-size:18px;font-weight:650}.small{font-size:14px;fill:#4b6079}
+      .box{fill:#fff;stroke:#b8c9dc;stroke-width:2;rx:16}
+      .core{fill:#eaf4ff;stroke:#4d93d6}.rule{fill:#ebfbf2;stroke:#4ca87a}
+      .agent{fill:#fff4e6;stroke:#d99b4a}.eval{fill:#f4efff;stroke:#9c7bd7}
+      .line{fill:none;stroke:#64748b;stroke-width:2.5;marker-end:url(#arrow)}
+      .dash{fill:none;stroke:#8c75bd;stroke-width:2.5;stroke-dasharray:8 6;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1280" height="660" fill="#f8fbff"/>
+  <text x="52" y="56" class="heading">ChainLens AI · 证据优先的交易分析</text>
+  <text x="52" y="86" class="sub">实线：在线分析　　虚线：完全离线的 30 条固定评测旁路</text>
+
+  <rect class="box" x="48" y="152" width="155" height="88"/>
+  <text class="label" x="75" y="187">用户 / Web</text><text class="small" x="75" y="213">输入交易哈希</text>
+  <rect class="box core" x="248" y="152" width="160" height="88"/>
+  <text class="label" x="280" y="187">REST + SSE</text><text class="small" x="280" y="213">验证与进度</text>
+  <rect class="box core" x="455" y="152" width="175" height="88"/>
+  <text class="label" x="488" y="187">取证与解析</text><text class="small" x="483" y="213">TxFacts + 原始 JSON</text>
+  <rect class="box" x="455" y="300" width="175" height="76"/>
+  <text class="label" x="477" y="332">Ethereum RPC</text><text class="small" x="486" y="357">JSON-RPC / Anvil</text>
+  <rect class="box rule" x="677" y="152" width="175" height="88"/>
+  <text class="label" x="701" y="187">七条确定性规则</text><text class="small" x="705" y="213">finding + evidence</text>
+  <rect class="box agent" x="899" y="152" width="155" height="88"/>
+  <text class="label" x="929" y="187">AI Agent</text><text class="small" x="918" y="213">工具调用与解释</text>
+  <rect class="box" x="1092" y="152" width="145" height="88"/>
+  <text class="label" x="1116" y="187">中文报告</text><text class="small" x="1104" y="213">规则 / 来源 / 置信度</text>
+  <path class="line" d="M203 196 H248"/><path class="line" d="M408 196 H455"/>
+  <path class="line" d="M630 196 H677"/><path class="line" d="M852 196 H899"/>
+  <path class="line" d="M1054 196 H1092"/><path class="line" d="M542 300 V240"/>
+  <path class="line" d="M542 152 V119 H977 V152"/>
+  <rect class="box" x="1092" y="300" width="145" height="76"/>
+  <text class="label" x="1106" y="332">PostgreSQL</text><text class="small" x="1114" y="357">分析历史</text>
+  <path class="line" d="M1164 240 V300"/>
+
+  <rect class="box eval" x="94" y="476" width="240" height="100"/>
+  <text class="label" x="121" y="516">30 条冻结 RPC fixture</text><text class="small" x="123" y="544">15 Anvil + 15 公开历史</text>
+  <rect class="box eval" x="476" y="476" width="210" height="100"/>
+  <text class="label" x="516" y="516">Offline 评测</text><text class="small" x="501" y="544">复用生产解析与规则</text>
+  <rect class="box eval" x="832" y="476" width="280" height="100"/>
+  <text class="label" x="866" y="516">JSON / Markdown + CI 门槛</text>
+  <text class="small" x="894" y="544">解析 ≥98% · 规则 100%</text>
+  <path class="dash" d="M334 526 H476"/><path class="dash" d="M686 526 H832"/>
+  <path class="dash" d="M581 476 V410 H648 V264 H542 V240"/>
+  <path class="dash" d="M686 488 H765 V240"/>
+  <text x="52" y="631" class="sub">边界：链上事实只来自 JSON-RPC；LLM 不得改写事实或确定性规则结论。</text>
+</svg>

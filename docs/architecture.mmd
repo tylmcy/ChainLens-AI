@@ -1,0 +1,16 @@
+flowchart LR
+    U[用户 / Web] --> API[REST + SSE API]
+    API --> CHAIN[取证与解析]
+    RPC[Ethereum JSON-RPC / Anvil] --> CHAIN
+    CHAIN --> FACTS[TxFacts + 原始 JSON]
+    FACTS --> RULES[七条确定性风险规则]
+    FACTS --> AGENT[Spring AI Agent / 工具调用]
+    RULES --> AGENT
+    AGENT --> REPORT[中文结构化报告 + evidence]
+    REPORT --> DB[(PostgreSQL 分析历史)]
+    REPORT --> U
+    FIXTURE[30 条冻结 RPC fixture] --> OFFLINE[Offline 评测]
+    OFFLINE --> CHAIN
+    OFFLINE --> RULES
+    OFFLINE --> GATE[JSON / Markdown 结果 + CI 门槛]
+    NOTE[链上事实只来自 RPC；LLM 不得改写事实与规则] -.-> FACTS

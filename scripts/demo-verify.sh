@@ -34,7 +34,7 @@ while IFS='|' read -r scenario tx_hash rule_id; do
     failures=$((failures + 1))
   fi
 done <<EOF
-$(sed -n 's/.*{"id":"\([^"]*\)","txHash":"\([^"]*\)","expectedRuleIds":\["\([^"]*\)"\]}.*/\1|\2|\3/p' "$MANIFEST")
+$(sed -n 's/.*{"id":"\([^"]*\)","txHash":"\([^"]*\)","expectedRuleIds":\["\([^"]*\)".*/\1|\2|\3/p' "$MANIFEST")
 EOF
 
 if [ "$failures" -ne 0 ]; then

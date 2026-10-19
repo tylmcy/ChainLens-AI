@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chainlens.example/schema/transaction-eval-v1.json",
+  "title": "ChainLens V1 transaction evaluation dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suiteId", "version", "cases"],
+  "properties": {
+    "suiteId": {"const": "transaction-eval"},
+    "version": {"const": "v1"},
+    "cases": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"$ref": "#/$defs/case"}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+    "integerString": {"type": "string", "pattern": "^-?[0-9]+$"},
+    "pointer": {"type": "string", "pattern": "^/result(/.*)?$"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "uri", "capturedAt", "license"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "uri": {"type": "string", "minLength": 1},
+        "capturedAt": {"type": "string", "format": "date"},
+        "license": {"type": "string", "minLength": 1}
+      }
+    },
+    "expectedValue": {
+      "type": "object", "additionalProperties": false,
+      "required": ["applicable", "value", "rawJsonRef"],
+      "properties": {
+        "applicable": {"type": "boolean"},
+        "value": {"type": ["string", "null"]},
+        "rawJsonRef": {"type": ["string", "null"]}
+      }
+    },
+    "calldata": {
+      "type": "object", "additionalProperties": false,
+      "required": ["applicable", "status", "selector", "resolvedSignature", "rawJsonRef"],
+      "properties": {
+        "applicable": {"type": "boolean"},
+        "status": {"enum": ["RESOLVED", "AMBIGUOUS", "UNRESOLVED"]},
+        "selector": {"type": ["string", "null"]},
+        "resolvedSignature": {"type": ["string", "null"]},
+        "rawJsonRef": {"$ref": "#/$defs/pointer"}
+      }
+    },
+    "transfer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tokenAddress", "from", "to", "valueWei", "logIndex", "rawJsonRef"],
+      "properties": {
+        "tokenAddress": {"$ref": "#/$defs/address"},
+        "from": {"$ref": "#/$defs/address"},
+        "to": {"$ref": "#/$defs/address"},
+        "valueWei": {"$ref": "#/$defs/integerString"},
+        "logIndex": {"$ref": "#/$defs/integerString"},
+        "rawJsonRef": {"$ref": "#/$defs/pointer"}
+      }
+    },
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tokenAddress", "owner", "spender", "valueWei", "logIndex", "rawJsonRef"],
+      "properties": {
+        "tokenAddress": {"$ref": "#/$defs/address"},
+        "owner": {"$ref": "#/$defs/address"},
+        "spender": {"$ref": "#/$defs/address"},
+        "valueWei": {"$ref": "#/$defs/integerString"},
+        "logIndex": {"$ref": "#/$defs/integerString"},
+        "rawJsonRef": {"$ref": "#/$defs/pointer"}
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ruleId", "severity", "confidence", "rpcMethod", "jsonPointer", "logIndex"],
+      "properties": {
+        "ruleId": {"type": "string", "minLength": 1},
+        "severity": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "rpcMethod": {"type": "string", "minLength": 1},
+        "jsonPointer": {"$ref": "#/$defs/pointer"},
+        "logIndex": {"type": ["string", "null"]}
+      }
+    },
+    "groundTruth": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "valueWei", "gasCostWei", "fromNetWei", "toNetWei", "calldata", "transfers", "approvals", "expectedFindings"],
+      "properties": {
+        "status": {"$ref": "#/$defs/expectedValue"},
+        "valueWei": {"$ref": "#/$defs/expectedValue"},
+        "gasCostWei": {"$ref": "#/$defs/expectedValue"},
+        "fromNetWei": {"$ref": "#/$defs/expectedValue"},
+        "toNetWei": {"$ref": "#/$defs/expectedValue"},
+        "calldata": {"$ref": "#/$defs/calldata"},
+        "transfers": {"type": "array", "items": {"$ref": "#/$defs/transfer"}},
+        "approvals": {"type": "array", "items": {"$ref": "#/$defs/approval"}},
+        "expectedFindings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}
+      }
+    },
+    "case": {
+      "type": "object", "additionalProperties": false,
+      "required": ["caseId", "sourceType", "network", "chainId", "txHash", "source", "fixtureDir", "groundTruth"],
+      "properties": {
+        "caseId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+        "sourceType": {"enum": ["ANVIL", "HISTORICAL"]},
+        "network": {"type": "string", "minLength": 1},
+        "chainId": {"type": "integer", "minimum": 1},
+        "txHash": {"$ref": "#/$defs/hash"},
+        "source": {"$ref": "#/$defs/source"},
+        "fixtureDir": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+        "groundTruth": {"$ref": "#/$defs/groundTruth"}
+      }
+    }
+  }
+}

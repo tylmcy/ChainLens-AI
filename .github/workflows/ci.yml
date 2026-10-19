@@ -62,3 +62,32 @@ jobs:
           name: rag-evaluation
           path: eval/results/rag/
           retention-days: 14
+
+  # 完全离线：只运行固定 30 笔交易的解析/规则门槛，不用 Docker、RPC、数据库或模型密钥。
+  transaction-offline-evaluation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Evaluate 30 frozen transactions
+        shell: bash
+        run: |
+          mkdir -p eval/results/offline
+          set -o pipefail
+          mvn -B -ntp -P transaction-eval -pl chainlens-evaluation -am test \
+            -Dtest=TransactionOfflineEvaluationGateTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            | tee eval/results/offline/gate.log
+      - name: Upload offline evaluation and gate log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: transaction-offline-evaluation
+          path: eval/results/offline/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,17 @@
+[
+  {"caseId":"historical-2020-eth","txHash":"0x4a1e3e3a2aa4aa79a777d0ae3e2c3a6de158226134123f6c14334964c6ec70cf","block":"10000000","category":"plain ETH / legacy"},
+  {"caseId":"historical-2020-transfer","txHash":"0x1f17943d5dd7053959f1dc092dfad60a7caa084224212b1adbecaf3137efdfdd","block":"10000000","category":"ERC-20 transfer / legacy"},
+  {"caseId":"historical-2020-approval","txHash":"0x0355b2fd83d185dcd66747912a263d4fcdbcbe49ca0339356b2ee6f37dd32d56","block":"10000000","category":"ERC-20 approval / legacy"},
+  {"caseId":"historical-2021-transfer","txHash":"0xf34ad2dec9ef8d155c014f1ef135b56023bc13b85fe20909d3506a02ad908156","block":"12000000","category":"ERC-20 transfer / legacy"},
+  {"caseId":"historical-2021-approval","txHash":"0xfc2727913d032dd4fbf2b5c1731aa14d6807b7fe29beba58bb5d295c4692e833","block":"12000000","category":"ERC-20 approval / legacy"},
+  {"caseId":"historical-2022-eth","txHash":"0x7ecdeea40834539df43b388d62c8e6bdee49107d10114b0d05c6adec1d16e322","block":"15000000","category":"plain ETH / EIP-1559"},
+  {"caseId":"historical-2022-transfer","txHash":"0xf490320cff087d82747fcb0e6ed797f899ff887bcd15162933ea051c94c596ea","block":"15000000","category":"ERC-20 transfer / legacy"},
+  {"caseId":"historical-2022-approval","txHash":"0x04a4fe49b382aecab0a739743221decdf6954ac876fc55eff8389324e89faa95","block":"15000000","category":"ERC-20 approval / EIP-1559"},
+  {"caseId":"historical-2023-eth","txHash":"0x5119dcc6bb07181742fd0366196021b120cc1c022c62ce3d3e272a7584fe4e2f","block":"18000000","category":"plain ETH / EIP-1559"},
+  {"caseId":"historical-2023-failed","txHash":"0xec080b91deea33830c3e626201662243c66c1f3d10da01f32c4cb0ebf395012a","block":"18000000","category":"failed transaction"},
+  {"caseId":"historical-2023-create","txHash":"0x24578bf2676fabd01269543dda61e53496a3282b1d9794ddb141319578052359","block":"18000000","category":"contract creation"},
+  {"caseId":"historical-2023-approval","txHash":"0x68f411b127b5f0be2927ed425e853fac435e5c0a3cdab289fb7d349f68cacae6","block":"18000000","category":"ERC-20 approval / EIP-1559"},
+  {"caseId":"historical-2025-burn","txHash":"0x012f0d8d04182597e27793580afcd309cdef07c824c2c6253a1e36a01510ed93","block":"23259263","category":"burn selector collision / EIP-1559","capturedAt":"2026-10-19"},
+  {"caseId":"historical-2024-transfer","txHash":"0xa87090960fd8768a0f6209c968583111c90b5fe3317322be82e00516e723cb83","block":"20000000","category":"ERC-20 transfer / EIP-1559"},
+  {"caseId":"historical-2024-approval","txHash":"0x8296a35d9746f0a146ba84f45eca3cbf75d53f4e9da60cfa66cca72c3f4b3843","block":"20000000","category":"ERC-20 approval / EIP-1559"}
+]

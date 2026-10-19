@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import io.chainlens.model.ApprovalEvent;
+import io.chainlens.model.EthLog;
 import io.chainlens.model.Severity;
 import io.chainlens.model.TransferEvent;
 import io.chainlens.rules.TxFactsFactory;
@@ -26,6 +27,16 @@ class RiskAddressHitRuleTest {
         return list;
     }
 
+    /** 构造真实回执日志位置；区块 logIndex 故意与回执数组下标不同。 */
+    private static EthLog eventLog(BigInteger logIndex, String first, String second) {
+        return new EthLog(TxFactsFactory.TOKEN,
+                List.of("0x" + "00".repeat(32), topic(first), topic(second)), "0x", logIndex, false);
+    }
+
+    private static String topic(String address) {
+        return "0x" + "0".repeat(24) + address.substring(2);
+    }
+
     @Test
     @DisplayName("正例：tx.from 命中 → HIGH / 0.85，描述写明来源与标签")
     void fromHitTriggers() {
@@ -38,18 +49,35 @@ class RiskAddressHitRuleTest {
         assertThat(findings.get(0).severity()).isEqualTo(Severity.HIGH);
         assertThat(findings.get(0).confidence()).isEqualTo(0.85);
         assertThat(findings.get(0).description()).contains("test-source", "钓鱼地址");
+        assertThat(findings.get(0).evidence().rawJsonRef().jsonPointer()).isEqualTo("/result/from");
+    }
+
+    @Test
+    @DisplayName("tx.to 命中时证据不能错误指向 tx.from")
+    void toHitPointsToRecipient() {
+        var rule = new RiskAddressHitRule(List.of(listOf(TxFactsFactory.TO, "风险收款方")));
+
+        var finding = rule.evaluate(TxFactsFactory.create().build()).get(0);
+
+        assertThat(finding.evidence().rawJsonRef().rpcMethod()).isEqualTo("eth_getTransactionByHash");
+        assertThat(finding.evidence().rawJsonRef().jsonPointer()).isEqualTo("/result/to");
     }
 
     @Test
     @DisplayName("正例：Transfer.to 命中（事件参与方）")
     void transferToHitTriggers() {
         var rule = new RiskAddressHitRule(List.of(listOf("0x2222222222222222222222222222222222222222", "风险路由")));
+        BigInteger logIndex = BigInteger.valueOf(7);
         var facts = TxFactsFactory.create()
                 .withTransfers(List.of(new TransferEvent(TxFactsFactory.TOKEN, TxFactsFactory.FROM,
-                        "0x2222222222222222222222222222222222222222", BigInteger.ONE, BigInteger.ZERO)))
+                        "0x2222222222222222222222222222222222222222", BigInteger.ONE, logIndex)))
+                .withLogs(List.of(eventLog(logIndex, TxFactsFactory.FROM,
+                        "0x2222222222222222222222222222222222222222")))
                 .build();
 
-        assertThat(rule.evaluate(facts)).hasSize(1);
+        var finding = rule.evaluate(facts).get(0);
+        assertThat(finding.evidence().logIndex()).isEqualTo(logIndex);
+        assertThat(finding.evidence().rawJsonRef().jsonPointer()).isEqualTo("/result/logs/0/topics/2");
     }
 
     @Test
@@ -59,9 +87,25 @@ class RiskAddressHitRuleTest {
         var facts = TxFactsFactory.create()
                 .withApprovals(List.of(new ApprovalEvent(TxFactsFactory.TOKEN, TxFactsFactory.FROM,
                         SPENDER, BigInteger.ONE, BigInteger.ZERO)))
+                .withLogs(List.of(eventLog(BigInteger.ZERO, TxFactsFactory.FROM, SPENDER)))
                 .build();
 
-        assertThat(rule.evaluate(facts)).hasSize(1);
+        var finding = rule.evaluate(facts).get(0);
+        assertThat(finding.evidence().rawJsonRef().jsonPointer()).isEqualTo("/result/logs/0/topics/2");
+    }
+
+    @Test
+    @DisplayName("事件命中但缺少原始日志时失败，不伪造证据路径")
+    void missingRawLogRejected() {
+        var rule = new RiskAddressHitRule(List.of(listOf(SPENDER, "恶意授权方")));
+        var facts = TxFactsFactory.create()
+                .withApprovals(List.of(new ApprovalEvent(TxFactsFactory.TOKEN, TxFactsFactory.FROM,
+                        SPENDER, BigInteger.ONE, BigInteger.ZERO)))
+                .build();
+
+        assertThatThrownBy(() -> rule.evaluate(facts))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("缺少原始日志");
     }
 
     @Test
