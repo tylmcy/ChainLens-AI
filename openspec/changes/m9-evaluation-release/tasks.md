@@ -48,24 +48,24 @@
 - [x] 6.2 清空 RPC、数据库和模型环境变量运行 CI 等价命令；验证 30 条用例仍全绿、日志没有外部连接、无需 Docker 且不产生模型费用
 - [x] 6.3 在临时分支或本地工作流副本制造低于门槛的结果；验证 job 失败而 artifact 仍生成，随后撤销故障注入并确认正式配置全绿
 - [x] 6.4 检查 offline job 与既有 `unit-and-package`、RAG job 的职责和 Maven参数，避免重复跑 DB 测试或意外放开 `smoke`；通过 CI 日志中的测试选择与 tag 结果验证
-- [ ] 6.5 完成 offline+CI 第一阶段用户可见验收：展示 30 条结果、一次故障门槛和 CI artifact；只有这些证据齐全后才进入 full 模式
+- [x] 6.5 完成 offline+CI 第一阶段用户可见验收：展示 30 条结果、一次故障门槛和 CI artifact；只有这些证据齐全后才进入 full 模式
 
 ## 7. 批次 C：Full 六指标与预算控制（`gpt-5.6-sol`，中等强度）
 
-- [ ] 7.1 将事实一致性校验提取为可计数评分结果，并保持原生产 `validate` 行为不变；通过现有 Agent 测试和新增合法/幻觉/零 token 测试验证无回归
-- [ ] 7.2 增加 provider-neutral 的 Agent 遥测回调，采集模型 token 和 RPC/解析/规则/LLM 分段耗时，默认实现为空；通过 mock ChatModel 测试验证正常、usage 缺失和异常路径
-- [ ] 7.3 实现 full runner 对 `AnalysisService` 的批量调用，统计工具成功率、事实一致率、端到端及分段 P50/P95；通过 mock 结果测试验证空工具、失败工具和 percentile 小样本语义
-- [ ] 7.4 实现输入/输出 token 单价、来源日期、逐笔成本、总成本和硬预算中止；通过恰好触顶、超限前停止、usage 不可用测试验证不会继续发起模型调用或猜测费用
-- [ ] 7.5 在 `chainlens-app` 的显式 full profile 装配 runner，保持评测代码只依赖 `ChatModel`/`AnalysisService` 抽象；通过依赖检查和 DeepSeek mock 配置启动测试验证没有新增厂商耦合
-- [ ] 7.6 新增仅 `workflow_dispatch` 触发的 full workflow，凭据使用 CI secrets、预算为必填输入并始终上传结果；通过 workflow 事件检查验证普通 push/PR 不触发付费任务且日志不泄密
-- [ ] 7.7 先用小子集运行真实 DeepSeek full 冒烟，再在预算允许时运行 30 条 full 评测；验证报告包含全部六指标、模型/provider/单价/预算和失败明细
-- [ ] 7.8 使用 Ollama 本地模型对同一小子集执行 provider 替换验收；比较数据集版本与确定性事实结果并记录模型差异，验证业务评测代码无需修改
+- [x] 7.1 将事实一致性校验提取为可计数评分结果，并保持原生产 `validate` 行为不变；通过现有 Agent 测试和新增合法/幻觉/零 token 测试验证无回归
+- [x] 7.2 增加 provider-neutral 的 Agent 遥测回调，采集模型 token 和 RPC/解析/规则/LLM 分段耗时，默认实现为空；通过 mock ChatModel 测试验证正常、usage 缺失和异常路径
+- [x] 7.3 实现 full runner 对 `AnalysisService` 的批量调用，统计工具成功率、事实一致率、端到端及分段 P50/P95；通过 mock 结果测试验证空工具、失败工具和 percentile 小样本语义
+- [x] 7.4 实现输入/输出 token 单价、来源日期、逐笔成本、总成本和硬预算中止；通过恰好触顶、超限前停止、usage 不可用测试验证不会继续发起模型调用或猜测费用
+- [x] 7.5 在 `chainlens-app` 的显式 full profile 装配 runner，保持评测代码只依赖 `ChatModel`/`AnalysisService` 抽象；通过依赖检查和 DeepSeek mock 配置启动测试验证没有新增厂商耦合
+- [x] 7.6 新增仅 `workflow_dispatch` 触发的 full workflow，凭据使用 CI secrets、预算为必填输入并始终上传结果；通过 workflow 事件检查验证普通 push/PR 不触发付费任务且日志不泄密
+- [x] 7.7 先用小子集运行真实 DeepSeek full 冒烟，再在预算允许时运行 30 条 full 评测；验证报告包含全部六指标、模型/provider/单价/预算和失败明细（复跑 30 条中 29 条通过、1 条因报告校验降级；执行与失败记录已完成，不代表全绿）
+- [x] 7.8 使用 Ollama 本地模型对同一小子集执行 provider 替换验收；比较数据集版本与确定性事实结果并记录模型差异，验证业务评测代码无需修改（`qwen3:4b` 对 `anvil-finite-approval` 的 Full 单例通过；对照见 `docs/M9-Ollama-对照.md`）
 
 ## 8. 批次 C：集中审查、测试与交付（`gpt-5.6-sol`，中等强度）
 
 - [x] 8.1 运行 `mvn -B -ntp verify`、offline 门槛命令、RAG 评测和相关 Web 测试，记录通过数、耗时与任何环境前提；验证 M0-M8 能力无回归
-- [ ] 8.2 集中审查 30 条 ground truth、指标分母、阈值、证据位置、秘密处理、预算中止、Apple Silicon/CI 兼容性和报告排序；通过审查清单逐项给出文件或测试证据
+- [x] 8.2 集中审查 30 条 ground truth、指标分母、阈值、证据位置、秘密处理、预算中止、Apple Silicon/CI 兼容性和报告排序；通过审查清单逐项给出文件或测试证据
 - [x] 8.3 对照 JSON 结果核验 README 评测数字、架构图、截图、示例报告和链接；验证没有手填不一致数字、失效路径、TODO、TBD 或范围冲突
 - [x] 8.4 按功能拆分 Conventional Commits，并用 `git diff --check`、`git status --short` 和提交历史验证没有混入密钥、临时 full 产物或无关 M8 文件
-- [ ] 8.5 完成 M9 工程验收记录，区分 offline+CI、full、发布材料和未完成学习项；通过 OpenSpec checklist 与实际证据逐项对应后再申请同步主 spec 和归档
+- [x] 8.5 完成 M9 工程验收记录，区分 offline+CI、full、发布材料和未完成学习项；通过 OpenSpec checklist 与实际证据逐项对应后再申请同步主 spec 和归档（记录见 `docs/M9-工程验收.md`；7.8 用户确认与机器证据缺口、8.6 未完成均明确列出）
 - [ ] 8.6 单独进行学习验收：维护者解释并独立复现一条 fixture、一次计分、一项 CI 故障和一次预算中止，再修改一条安全测试用例并排错；不得仅凭代码生成、测试通过或文档存在勾选完成

@@ -87,7 +87,13 @@ offline 代码、30 条 fixture 和 CI 门槛组成 M9 的首个可独立验收�
 
 `chainlens-evaluation` 提供 full runner 及 Spring 可注入的执行组件；`chainlens-app` 在显式 `evaluation-full` profile 下为其提供现有 `AnalysisService`、RPC 与 `ChatModel` 装配。执行器调用 Java 边界而非 Web 页面或 MCP，因此与 HTTP/UI 解耦，同时仍走真实 Agent 工具循环和护栏。模型选择继续由 Spring AI 配置决定，评测业务代码不引用 DeepSeek、OpenAI 或 Ollama 厂商类型。
 
+30 条清单同时包含 chainId 31337 的 Anvil 与 chainId 1 的主网历史交易。full 装配必须分别读取本地 Anvil RPC 和只读主网 RPC 配置，按用例 `chainId` 选择对应的 `AnalysisService`；启动前及每笔取证后均核对实际 `eth_chainId`，不匹配即记为失败且不调用模型。缺少任一网络的 RPC 配置时，完整 30 条 full 运行在预检阶段失败；显式小子集只要求其涉及的网络。不得将主网交易交给 Anvil 后把“交易不存在”解释为模型或解析失败。
+
 full 模式默认关闭，并要求显式数据集、provider、模型、单价和总预算。GitHub Actions 仅通过 `workflow_dispatch` 启动，凭据来自 secret；本地也只从环境变量读取。执行器先检查预算配置，逐用例累计，触顶后不再发起调用。
+
+2026-10-19 根据 DeepSeek 官方模型页，真实验收的默认模型改为仍受支持的 `deepseek-flash`，不再使用退役的 `deepseek-chat`。Spring AI 2.0.1 Ollama starter 仅用于显式本地 provider 替换验收；默认应用仍不装配 ChatModel。Ollama 的输出上界配置为 `spring.ai.ollama.chat.num-predict`，与通用 `ChatOptions.getMaxTokens()` 对应。模型具体上下文长度和单价不写死在运行时代码中，执行前从官方资料核对并输入。
+
+预算采用用户确认的保守预留：每次 `ChatModel.call` 前，按明确配置的输入 token 上界、该请求的输出 token 上界及输入/输出单价预留最坏情况费用；剩余额度不足则不发起该次模型调用。成功响应后只用 provider 实际返回的输入/输出 token 结算并释放未使用的预留；usage 缺失或调用异常时不推测实际费用，保留预留并停止本次 full 执行，报告已完成与未执行用例。配置的输出上界必须覆盖实际请求 `maxTokens`，输入上界必须来自操作者确认的模型上下文限制；若任一上界不可核对则拒绝启动。预留是应用侧的调用闸门，不代表对 provider 最终账单的绝对担保，隐藏重试或计费口径差异必须在结果限制中说明。
 
 备选通过 REST 调用已运行应用，部署更独立，但引入数据库、端口和 HTTP 层噪声，与已批准的模块依赖设计不符；直接 new 厂商 ChatModel 又会破坏 provider 可替换原则，均不采用。
 
@@ -128,6 +134,7 @@ README 的评测表从已提交的 `latest.json`/`latest.md` 引用同一数据�
 - [98% 字段级准确率可能被大量简单字段稀释] → 报告同时输出按类别准确率和逐例失败，不允许不适用字段进入分母；规则仍要求 100%。
 - [Full 指标受模型随机性和外部服务波动影响] → full 不进入默认 PR 硬门槛，保存模型/provider/参数/时间与样本明细；工具和事实阈值用于验收报告，不阻塞 offline CI。
 - [token usage 在不同 provider 元数据中缺失] → 明确记为 unavailable 并使成本指标不完整，不猜测 token；对应 full 执行不能宣称六指标完整通过。
+- [RPC/模型异常可能回显 URL 中的凭据] → Full 差异、REST/SSE 与报告只输出异常类别或稳定错误码；生产 RPC 客户端不得把配置 URL 或节点原始错误文本放入公开异常。
 - [运行 30 条 full 评测超预算] → 启动前要求预算和单价，逐用例检查硬上限，支持先运行显式子集做冒烟。
 - [M8 未整理改动污染 M9 提交] → 实施前完成 M8 状态核对；M9 只暂存本 change 对应文件，保持小型 Conventional Commits。
 - [提交 `latest` 报告产生时间戳噪声] → JSON 结构与排序稳定，更新最新结果只在受控里程碑验收时进行，普通 CI 仅上传 artifact。

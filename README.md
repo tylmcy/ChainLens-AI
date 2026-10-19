@@ -35,7 +35,15 @@ mvn -B -ntp -P transaction-eval -pl chainlens-evaluation -am test \
   -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-当前固定样本的机器结果是解析 **585/585**、规则 **210/210**（TP=18、TN=192、FP=0、FN=0）；门槛分别为 ≥98% 和 100%。这仅说明当前 30 条样本通过，**不等于对所有链上交易都达到 100% 准确率**。完整数字以 [JSON 报告](eval/results/offline/latest.json) 和 [可读报告](eval/results/offline/latest.md) 为准；[数据集清单](eval/cases/transaction-eval-v1.json) 列出来源和 ground truth。默认 `mvn verify` 不重复跑这项门槛，GitHub Actions 使用独立 `transaction-offline-evaluation` job。故意改坏临时副本的排错方法见 [M9 验证记录](openspec/changes/m9-evaluation-release/verification.md)。Full 模型评测与远端 CI artifact 验收尚未完成，不能据此宣称 M9 整体结束。
+当前固定样本的机器结果是解析 **585/585**、规则 **210/210**（TP=18、TN=192、FP=0、FN=0）；门槛分别为 ≥98% 和 100%。这仅说明当前 30 条样本通过，**不等于对所有链上交易都达到 100% 准确率**。完整数字以 [JSON 报告](eval/results/offline/latest.json) 和 [可读报告](eval/results/offline/latest.md) 为准；[数据集清单](eval/cases/transaction-eval-v1.json) 列出来源和 ground truth。默认 `mvn verify` 不重复跑这项门槛，GitHub Actions 使用独立 `transaction-offline-evaluation` job；[2026-10-19 的远端 CI 运行](https://github.com/tylmcy/ChainLens-AI/actions/runs/39192303469) 已确认三个 job 全绿且上传了离线 artifact。故意改坏临时副本的排错方法见 [M9 验证记录](openspec/changes/m9-evaluation-release/verification.md)。Full 真实模型评测尚未验收，不能据此宣称 M9 整体结束。
+
+### M9 Full 模型评测（显式启动，当前未验收）
+
+Full 模式对同一数据集调用真实 `AnalysisService`，除解析和规则外还记录工具调用成功率、事实一致率、RPC/解析/规则/LLM/端到端延迟，以及模型 usage 与费用。它**不在默认 CI 中运行**，需要本地显式设置 `evaluation-full` profile，或由仓库维护者手动启动 [Full evaluation workflow](.github/workflows/full-evaluation.yml)。手动工作流必须填写预算、输入/输出单价、价格核对日期、模型上下文上界及官方来源；`DEEPSEEK_API_KEY` 和只读 `ETH_MAINNET_RPC_URL` 从 GitHub secrets 读取。先通过 `case_ids` 只选一笔 Anvil 交易冒烟；留空才运行完整 30 条，同时需要 Anvil 和主网两个正确的 RPC。报告上传为 `transaction-full-evaluation` artifact；预算不足、usage 缺失或模型异常会明确失败，不会伪装为通过。
+
+DeepSeek 的旧模型名 `deepseek-chat` 已退役；本项目当前默认 `deepseek-flash`，既有本机 `.env` 也需同步检查 `DEEPSEEK_MODEL`。运行前按 [DeepSeek 官方模型与价格页](https://api-docs.deepseek.com/quick_start/pricing/) 重新核对上下文长度和峰值单价。使用 Ollama 作本地 provider 替换验收时，需自行准备支持工具调用的聊天模型，并显式设置 `SPRING_AI_MODEL_CHAT=ollama`；本地模型的 API 费用记为零，不代表电费或硬件成本为零。一次真实的 [Ollama 与 DeepSeek 同交易对照](docs/M9-Ollama-对照.md)和 Full 的验收状态见 [M9 验证记录](openspec/changes/m9-evaluation-release/verification.md)。
+
+如果以 M9 作为学习项目，工程验收之后请再按 [M9 学习验收清单](docs/M9-学习验收.md) 独立解释、复现、修改和排错；自动测试不会替你完成学习验收。
 
 一笔本地无限授权交易的实际 API 输出解读见 [M9 Anvil 示例报告](docs/M9-Anvil-示例报告.md)。
 
